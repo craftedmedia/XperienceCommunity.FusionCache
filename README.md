@@ -110,7 +110,7 @@ The tag helper supports Kentico cache dependencies and all standard `vary-by-*` 
 
 ### Output cache
 
-This package integrates with the Asp NET Core Output Caching middleware via a custom `IOutputCacheStore` and `IOutputCachePolicy` which has been integrated with `FusionCache`.
+This package integrates with the NET Core Output Caching middleware via a custom `IOutputCacheStore` and `IOutputCachePolicy` which has been integrated with `FusionCache`.
 
 Just reference `XperienceFusionCache` as the policy name when using the `[OutputCache]` attribute and optionally specify cache dependencies via the `Tags` attribute.
 
@@ -150,7 +150,7 @@ Policy defaults can be customized via `appsettings.json`:
 
 ### Extending cache invalidation for custom object types
 
-Cache invalidation of standard Kentico objects (pages, content items, media etc...) is handled out of the box but if you want invalidation for general object types (those that inherit from `BaseInfo`, to be precise) then you should implement the `IGeneralObjectCacheItemsProvider` type and place it somewhere within your application root.
+Cache invalidation of standard Kentico objects (pages, content items, media etc...) is handled out of the box but if you want invalidation for general object types (those that inherit from `BaseInfo`) then you should implement the `IGeneralObjectCacheItemsProvider` type and place it somewhere within your application root.
 
 Example:
 
