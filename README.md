@@ -1,93 +1,177 @@
-## ---Template info---
-
----Run the `Repository-Setup.ps1` in the root of this repository, specifying the `ProjectName` for the new project
----ex: `.\Repository-Setup.ps1 -ProjectName Kentico.Xperience.CoolProject`
-
----This section contains general information about the repository template and is to be deleted before submitting a pull request with the final documentation.---
-
----Lines enclosed by three dashes (like this one) are placeholders and comments to be replaced with specific information or deleted completely.---
-
-### ---Library naming conventions---
-
----Repository name – use "xperience-by-kentico-\<project-name\>" for projects aimed for Xperience by Kentico and "xperience-\<project-name\>" for projects aimed for Kentico Xperience 13---
-
----Package Name – use "Xperience by Kentico: \<Project Name\>" for projects aimed for Xperience by Kentico and "Xperience: \<Project Name\>" for projects aimed for Kentico Xperience 13---
-
-# ---Package Name---
-
----Select the correct badge for the support policy and update the GitHub Action pipeline badge to point to this repository (replace `repo-template`)---
-
-[![7-day bug-fix policy](https://img.shields.io/badge/-7--days_bug--fixing_policy-grey?labelColor=orange&logo=data:image/svg+xml;base64,PHN2ZyBjbGFzcz0ic3ZnLWljb24iIHN0eWxlPSJ3aWR0aDogMWVtOyBoZWlnaHQ6IDFlbTt2ZXJ0aWNhbC1hbGlnbjogbWlkZGxlO2ZpbGw6IGN1cnJlbnRDb2xvcjtvdmVyZmxvdzogaGlkZGVuOyIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik04ODguNDkgMjIyLjY4NnYtMzEuNTRsLTY1LjY3Mi0wLjk1NWgtMC4yMDVhNDY1LjcxNSA0NjUuNzE1IDAgMCAxLTE0NC4zMTUtMzEuMzM0Yy03Ny4wMDUtMzEuMTk4LTEyNi4yOTQtNjYuNzY1LTEyNi43MDMtNjcuMTA3bC0zOS44LTI4LjY3Mi0zOS4xODUgMjguNDY4Yy0yLjA0OCAxLjUwMS00OS45MDMgMzYuMDQ0LTEyNi45MDggNjcuMzFhNDQ3LjQyIDQ0Ny40MiAwIDAgMS0xNDQuNTIgMzEuMzM1bC02NS44NzcgMC45NTZ2Mzc4Ljg4YzAgODcuMDQgNDkuODM0IDE4NC42NjEgMTM3LjAxIDI2Ny44MSAzNy41NDcgMzUuODQgNzkuMjU4IDY2LjM1NSAxMjAuODMzIDg4LjIgNDMuMjggMjIuNzMzIDg0LjI0IDM0LjYxMiAxMTguODUyIDM0LjYxMiAzNC40MDYgMCA3NS43NzYtMTIuMTUyIDExOS42MDMtMzUuMTU4YTU0Ny45NzcgNTQ3Ljk3NyAwIDAgMCAxMjAuMDEzLTg3LjY1NCA1MTUuMjA5IDUxNS4yMDkgMCAwIDAgOTYuMTg4LTEyMi44OGMyNy4xMDItNDkuNTYyIDQwLjgyMy05OC4zMDQgNDAuODIzLTE0NC45OTlsLTAuMTM2LTM0Ny4yMDR6TTUxMC4wOSAxNDMuNDI4bDEuNzA2LTEuMzY1IDEuNzc1IDEuMzY1YzUuODAzIDQuMTY1IDU5LjUyOSA0MS44NDggMTQwLjM1NiA3NC43NTIgNzkuMTkgMzIuMDg2IDE1My42IDM1LjYzNSAxNjcuNjYzIDM2LjA0NWwyLjU5NCAwLjA2OCAwLjIwNSAzMTUuNzM0YzAuMTM3IDY5LjQ5NS00Mi41OTggMTUwLjE4Ni0xMTcuMDc3IDIyMS40NTdDNjQxLjU3IDg1NC4yODkgNTYzLjEzIDg5Ni40NzggNTEyIDg5Ni40NzhjLTIzLjY4OSAwLTU1LjU3LTkuODk5LTg5LjcwMi0yNy43ODVhNDc4LjgyMiA0NzguODIyIDAgMCAxLTEwNS42MDktNzcuMjc4QzI0Mi4yMSA3MjAuMjEzIDE5OS40NzUgNjM5LjUyMiAxOTkuNDc1IDU2OS44OVYyNTQuMjI1bDIuNzMtMC4xMzZjMy4yNzggMCA4Mi42MDQtMS41MDIgMTY3LjY2NC0zNS45NzdhNzM5Ljk0MiA3MzkuOTQyIDAgMCAwIDE0MC4yMi03NC42MTV2LTAuMDY5eiIgIC8+PHBhdGggZD0iTTcxMy4zMTggMzY4LjY0YTMyLjIyMiAzMi4yMjIgMCAwIDAtNDUuMzI5IDBMNDQ5LjE5NSA1ODcuNDM1bC05My4xODQtOTMuMTE2YTMyLjIyMiAzMi4yMjIgMCAwIDAtNDUuMzMgMCAzMi4yMjIgMzIuMjIyIDAgMCAwIDAgNDUuMjZsMTE1Ljg1IDExNS44NWEzMi4yOSAzMi4yOSAwIDAgMCA0NS4zMjggMEw3MTMuMzIgNDEzLjlhMzIuMjIyIDMyLjIyMiAwIDAgMCAwLTQ1LjMzeiIgIC8+PC9zdmc+)](https://github.com/Kentico/.github/blob/main/SUPPORT.md#full-support) [![Kentico Labs](https://img.shields.io/badge/Kentico_Labs-grey?labelColor=orange&logo=data:image/svg+xml;base64,PHN2ZyBjbGFzcz0ic3ZnLWljb24iIHN0eWxlPSJ3aWR0aDogMWVtOyBoZWlnaHQ6IDFlbTt2ZXJ0aWNhbC1hbGlnbjogbWlkZGxlO2ZpbGw6IGN1cnJlbnRDb2xvcjtvdmVyZmxvdzogaGlkZGVuOyIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik05NTYuMjg4IDgwNC40OEw2NDAgMjc3LjQ0VjY0aDMyYzE3LjYgMCAzMi0xNC40IDMyLTMycy0xNC40LTMyLTMyLTMyaC0zMjBjLTE3LjYgMC0zMiAxNC40LTMyIDMyczE0LjQgMzIgMzIgMzJIMzg0djIxMy40NEw2Ny43MTIgODA0LjQ4Qy00LjczNiA5MjUuMTg0IDUxLjIgMTAyNCAxOTIgMTAyNGg2NDBjMTQwLjggMCAxOTYuNzM2LTk4Ljc1MiAxMjQuMjg4LTIxOS41MnpNMjQxLjAyNCA2NDBMNDQ4IDI5NS4wNFY2NGgxMjh2MjMxLjA0TDc4Mi45NzYgNjQwSDI0MS4wMjR6IiAgLz48L3N2Zz4=)](https://github.com/Kentico/.github/blob/main/SUPPORT.md#labs-limited-support) [![CI: Build and Test](https://github.com/Kentico/repo-template/actions/workflows/ci.yml/badge.svg)](https://github.com/Kentico/repo-template/actions/workflows/ci.yml)
+# XperienceCommunity.FusionCache
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Description
-
----A short description of the functionality – what scenarios are fulfilled by the Intergration / App / Solution. Include screenshots displaying the functionality.---
-
----Also list any limitations of the functionality that may result in unexpected behavior for the end user. These can be caused, e.g., by scope cuts or unexpected issues during implementation.---
-
-## Requirements
+This packages integrates with the popular Hybrid Caching library known as [ZiggyCreatures.FusionCache](https://github.com/ZiggyCreatures/FusionCache) allowing for L1 + L2 caching within Xperience.
+It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom `FusionCache` backed cache tag helper and support for output caching.
 
 ### Library Version Matrix
 
----This matrix explains which versions of the library are compatible with different versions of Xperience by Kentico / Kentico Xperience 13---
-
 | Xperience Version | Library Version |
 | ----------------- | --------------- |
-| >= 28.1.0         | 1.0.0           |
+| >= 30.0.0         | 1.0.0           |
 
 ### Dependencies
-
----These are all the dependencies required to use (not build) the library---
 
 - [ASP.NET Core 8.0](https://dotnet.microsoft.com/en-us/download)
 - [Xperience by Kentico](https://docs.kentico.com)
 
 ### Other requirements
 
----A list of other requirements and prerequisites needed to use the library. If there are none, don't include this section in the readme.---
+A Redis instance to use as your L2 cache.
 
-## Package Installation
+### Package Installation
 
----This details the steps required to add the library to a solution. This could include multiple packages (NuGet and/or npm)---
+Install the `XperienceCommunity.FusionCache` package via nuget or run:
 
-Add the package to your application using the .NET CLI
-
-```powershell
-dotnet add package <library nuget package name>
 ```
+Install-Package XperienceCommunity.FusionCache
+```
+From package manager console.
 
 ## Quick Start
 
----Minimal steps to get started with the library. Support the steps with helpful screenshots.---
+### Configuration
 
----You can completely omit this section if the setup is complicated and cannot be realistically condensed into a few steps. Instead, describe everything in detail in _Usage-Guide.md_.---
+Include the following section within your `appsettings.json` file:
+
+```
+ "XperienceFusionCache": {
+   "RedisConnectionString": "REDIS CONNECTION STRING GOES HERE"
+ }
+```
+
+### Register services
+
+Add the following code to your `Program.cs` file:
+
+```
+var builder = WebApplication.CreateBuilder(args);
+
+// ...
+
+builder.Services.AddXperienceFusionCache(builder.Configuration);
+```
+
+And include `UseXperienceFusionCache()` before `app.Run()`:
+
+```
+app.UseXperienceFusionCache();
+```
+
+And that should be enough to get going! Read on for a more info.
 
 ## Full Instructions
 
----Add the full instructions, guidance, and tips to the _Usage-Guide.md_ file---
+### Default Cache options
 
-View the [Usage Guide](./docs/Usage-Guide.md) for more detailed instructions.
+You can choose to configure some default `FusionCacheEntryOptions` via `appsettings.json` config. These will be used as the default for all cache entries, although they can be overridden directly when using any of the methods within `IFusionCache`.
+
+Example:
+
+```
+"XperienceFusionCache": {
+  "DefaultFusionCacheEntryOptions": {
+    "Duration": "00:05:00", // 5 mins,
+    "DistributedCacheDuration": "00:10:00", // 10 mins,
+    "IsFailSafeEnabled": true,
+    "FailSafeMaxDuration": "02:00:00" // 2 hours
+    // Etc...
+  }
+}
+```
+
+Any option available on the [FusionCacheEntryOptions](https://github.com/ZiggyCreatures/FusionCache/blob/f3896a5f5b6e21f918009d687520938d322f79f4/src/ZiggyCreatures.FusionCache/FusionCacheEntryOptions.cs) is also available to be set here.
+
+### Fusion Cache Tag Helper
+
+The package provides a custom cache tag helper backed by `FusionCache`.
+
+To use it, add the following include to your `_ViewImports.cshtml` file:
+
+```
+@addTagHelper *, XperienceCommunity.FusionCache
+```
+
+And include the tag helper in your view:
+
+```
+<xperience-fusion-cache
+    name="home-page-cache"
+    cache-dependencies="@(new string[] { "webpageitem|byid|1", "contentitem|bycontenttype|Medio.Clinic" })"
+    duration="@TimeSpan.FromMinutes(5)">
+
+@* Cached HTML goes here *@
+
+</xperience-fusion-cache>
+```
+
+The tag helper supports Kentico cache dependencies and all standard `vary-by-*` attributes as well as a `duration` property, however there is **no** support for `expires-sliding`, `expires-on`, and `expires-after` since `FusionCache` only supports `Duration`.
+
+### Output cache
+
+This package integrates with the Asp NET Core Output Caching middleware via a custom `IOutputCacheStore` and `IOutputCachePolicy` which has been integrated with `FusionCache`.
+
+Just reference `XperienceFusionCache` as the policy name when using the `[OutputCache]` attribute and optionally specify cache dependencies via the `Tags` attribute.
+
+Example usage:
+
+```
+public class HomePageController : Controller
+{
+    [OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]
+    public async Task<IActionResult> Index()
+    {
+        // Perform some expensive logic...
+
+        // Associate cache dependencies with the current request
+        this.HttpContext.AddCacheDependencies(
+            new HashSet<string>() {
+                CacheHelper.BuildCacheItemName(new[] { "webpageitem", "bychannel", "MyWebsite", "bycontenttype", "website.homepage" }),
+            });
+
+        return new TemplateResult();
+    }
+}
+
+```
+
+You can also specify cache dependencies via the `AddCacheDependencies` extension method (see example above) if they aren't known at runtime.
+
+Policy defaults can be customized via `appsettings.json`:
+
+```
+"XperienceFusionCache": {
+  // ...
+  "OutputCachePolicyName": "MyOutputCachePolicy",
+  "OutputCacheExpiration": "00:05:00"
+}
+```
+
+### Extending cache invalidation for custom object types
+
+Cache invalidation of standard Kentico objects (pages, content items, media etc...) is handled out of the box but if you want invalidation for general object types (those that inherit from `BaseInfo`, to be precise) then you should implement the `IGeneralObjectCacheItemsProvider` type and place it somewhere within your application root.
+
+Example:
+
+```
+public class GeneralObjectsCacheItemsProvider : IGeneralObjectCacheItemsProvider
+{
+    public IEnumerable<ObjectTypeInfo> GeneralObjectInfos => new List<ObjectTypeInfo>()
+    {
+        SomeCustomTypeInfo.TYPEINFO,
+        UserInfo.TYPEINFO,
+        //...
+    };
+}
+```
+
+This will ensure cache invalidation based on the 'General objects' dummy cache keys for the listed types: https://docs.kentico.com/developers-and-admins/development/caching/cache-dependencies#general-objects
 
 ## Contributing
 
 To see the guidelines for Contributing to Kentico open source software, please see [Kentico's `CONTRIBUTING.md`](https://github.com/Kentico/.github/blob/main/CONTRIBUTING.md) for more information and follow the [Kentico's `CODE_OF_CONDUCT`](https://github.com/Kentico/.github/blob/main/CODE_OF_CONDUCT.md).
 
-Instructions and technical details for contributing to **this** project can be found in [Contributing Setup](./docs/Contributing-Setup.md).
-
 ## License
 
 Distributed under the MIT License. See [`LICENSE.md`](./LICENSE.md) for more information.
-
-## Support
-
----Select the correct badge for the support policy---
-
-[![7-day bug-fix policy](https://img.shields.io/badge/-7--days_bug--fixing_policy-grey?labelColor=orange&logo=data:image/svg+xml;base64,PHN2ZyBjbGFzcz0ic3ZnLWljb24iIHN0eWxlPSJ3aWR0aDogMWVtOyBoZWlnaHQ6IDFlbTt2ZXJ0aWNhbC1hbGlnbjogbWlkZGxlO2ZpbGw6IGN1cnJlbnRDb2xvcjtvdmVyZmxvdzogaGlkZGVuOyIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik04ODguNDkgMjIyLjY4NnYtMzEuNTRsLTY1LjY3Mi0wLjk1NWgtMC4yMDVhNDY1LjcxNSA0NjUuNzE1IDAgMCAxLTE0NC4zMTUtMzEuMzM0Yy03Ny4wMDUtMzEuMTk4LTEyNi4yOTQtNjYuNzY1LTEyNi43MDMtNjcuMTA3bC0zOS44LTI4LjY3Mi0zOS4xODUgMjguNDY4Yy0yLjA0OCAxLjUwMS00OS45MDMgMzYuMDQ0LTEyNi45MDggNjcuMzFhNDQ3LjQyIDQ0Ny40MiAwIDAgMS0xNDQuNTIgMzEuMzM1bC02NS44NzcgMC45NTZ2Mzc4Ljg4YzAgODcuMDQgNDkuODM0IDE4NC42NjEgMTM3LjAxIDI2Ny44MSAzNy41NDcgMzUuODQgNzkuMjU4IDY2LjM1NSAxMjAuODMzIDg4LjIgNDMuMjggMjIuNzMzIDg0LjI0IDM0LjYxMiAxMTguODUyIDM0LjYxMiAzNC40MDYgMCA3NS43NzYtMTIuMTUyIDExOS42MDMtMzUuMTU4YTU0Ny45NzcgNTQ3Ljk3NyAwIDAgMCAxMjAuMDEzLTg3LjY1NCA1MTUuMjA5IDUxNS4yMDkgMCAwIDAgOTYuMTg4LTEyMi44OGMyNy4xMDItNDkuNTYyIDQwLjgyMy05OC4zMDQgNDAuODIzLTE0NC45OTlsLTAuMTM2LTM0Ny4yMDR6TTUxMC4wOSAxNDMuNDI4bDEuNzA2LTEuMzY1IDEuNzc1IDEuMzY1YzUuODAzIDQuMTY1IDU5LjUyOSA0MS44NDggMTQwLjM1NiA3NC43NTIgNzkuMTkgMzIuMDg2IDE1My42IDM1LjYzNSAxNjcuNjYzIDM2LjA0NWwyLjU5NCAwLjA2OCAwLjIwNSAzMTUuNzM0YzAuMTM3IDY5LjQ5NS00Mi41OTggMTUwLjE4Ni0xMTcuMDc3IDIyMS40NTdDNjQxLjU3IDg1NC4yODkgNTYzLjEzIDg5Ni40NzggNTEyIDg5Ni40NzhjLTIzLjY4OSAwLTU1LjU3LTkuODk5LTg5LjcwMi0yNy43ODVhNDc4LjgyMiA0NzguODIyIDAgMCAxLTEwNS42MDktNzcuMjc4QzI0Mi4yMSA3MjAuMjEzIDE5OS40NzUgNjM5LjUyMiAxOTkuNDc1IDU2OS44OVYyNTQuMjI1bDIuNzMtMC4xMzZjMy4yNzggMCA4Mi42MDQtMS41MDIgMTY3LjY2NC0zNS45NzdhNzM5Ljk0MiA3MzkuOTQyIDAgMCAwIDE0MC4yMi03NC42MTV2LTAuMDY5eiIgIC8+PHBhdGggZD0iTTcxMy4zMTggMzY4LjY0YTMyLjIyMiAzMi4yMjIgMCAwIDAtNDUuMzI5IDBMNDQ5LjE5NSA1ODcuNDM1bC05My4xODQtOTMuMTE2YTMyLjIyMiAzMi4yMjIgMCAwIDAtNDUuMzMgMCAzMi4yMjIgMzIuMjIyIDAgMCAwIDAgNDUuMjZsMTE1Ljg1IDExNS44NWEzMi4yOSAzMi4yOSAwIDAgMCA0NS4zMjggMEw3MTMuMzIgNDEzLjlhMzIuMjIyIDMyLjIyMiAwIDAgMCAwLTQ1LjMzeiIgIC8+PC9zdmc+)](https://github.com/Kentico/.github/blob/main/SUPPORT.md#full-support) [![Kentico Labs](https://img.shields.io/badge/Kentico_Labs-grey?labelColor=orange&logo=data:image/svg+xml;base64,PHN2ZyBjbGFzcz0ic3ZnLWljb24iIHN0eWxlPSJ3aWR0aDogMWVtOyBoZWlnaHQ6IDFlbTt2ZXJ0aWNhbC1hbGlnbjogbWlkZGxlO2ZpbGw6IGN1cnJlbnRDb2xvcjtvdmVyZmxvdzogaGlkZGVuOyIgdmlld0JveD0iMCAwIDEwMjQgMTAyNCIgdmVyc2lvbj0iMS4xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik05NTYuMjg4IDgwNC40OEw2NDAgMjc3LjQ0VjY0aDMyYzE3LjYgMCAzMi0xNC40IDMyLTMycy0xNC40LTMyLTMyLTMyaC0zMjBjLTE3LjYgMC0zMiAxNC40LTMyIDMyczE0LjQgMzIgMzIgMzJIMzg0djIxMy40NEw2Ny43MTIgODA0LjQ4Qy00LjczNiA5MjUuMTg0IDUxLjIgMTAyNCAxOTIgMTAyNGg2NDBjMTQwLjggMCAxOTYuNzM2LTk4Ljc1MiAxMjQuMjg4LTIxOS41MnpNMjQxLjAyNCA2NDBMNDQ4IDI5NS4wNFY2NGgxMjh2MjMxLjA0TDc4Mi45NzYgNjQwSDI0MS4wMjR6IiAgLz48L3N2Zz4=)](https://github.com/Kentico/.github/blob/main/SUPPORT.md#labs-limited-support)
-
----Select the correct name for the support policy---
-
-This project has **Full support by 7-day bug-fix policy** / **Kentico Labs limited support**.
-
-See [`SUPPORT.md`](https://github.com/Kentico/.github/blob/main/SUPPORT.md#full-support) for more information.
-
-For any security issues see [`SECURITY.md`](https://github.com/Kentico/.github/blob/main/SECURITY.md).
