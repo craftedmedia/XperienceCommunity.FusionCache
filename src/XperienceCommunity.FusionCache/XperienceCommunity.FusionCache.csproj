@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Title>XperienceCommunity.FusionCache</Title>
+    <Authors>Duane Gibbs</Authors>
+    <Description>This package integrates with the popular Hybrid Caching library known as ZiggyCreatures.FusionCache allowing for L1 + L2 caching within Xperience. It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom FusionCache backed cache tag helper and support for output caching.</Description>
+    <PackageTags>xperience;kentico;aspnetcore;cache;fusioncache</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommonServiceLocator" />
+    <PackageReference Include="Kentico.Xperience.Core" />
+    <PackageReference Include="Kentico.Xperience.WebApp" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson" />
+  </ItemGroup>
+  
+</Project>
