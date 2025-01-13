@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 
 using Microsoft.AspNetCore.Html;
-using Microsoft.AspNetCore.Mvc.TagHelpers.Cache;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +22,7 @@ public partial class FusionCacheTagHelperService
     private readonly ILogger<FusionCacheTagHelperService> logger;
     private readonly IFusionCache fusionCache;
     private readonly HtmlEncoder htmlEncoder;
-    private readonly ConcurrentDictionary<FusionCacheTagKey, Task<IHtmlContent>> workers;
+    private readonly ConcurrentDictionary<FusionCacheTagKey, Task<HtmlString>> workers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FusionCacheTagHelperService"/> class.
@@ -44,7 +43,7 @@ public partial class FusionCacheTagHelperService
         this.fusionCache = fusionCache;
         this.htmlEncoder = htmlEncoder;
 
-        workers = new ConcurrentDictionary<FusionCacheTagKey, Task<IHtmlContent>>();
+        workers = new ConcurrentDictionary<FusionCacheTagKey, Task<HtmlString>>();
     }
 
     /// <summary>
@@ -54,12 +53,12 @@ public partial class FusionCacheTagHelperService
     /// <param name="key">The key in the storage.</param>
     /// <param name="options">Cache options.</param>
     /// <returns>A cached or new content for the cache tag helper.</returns>
-    public async Task<IHtmlContent> ProcessContentAsync(
+    public async Task<HtmlString> ProcessContentAsync(
         TagHelperOutput tagHelperOutput,
         FusionCacheTagKey key,
         XperienceFusionCacheTagHelperOptions options)
     {
-        IHtmlContent? content = null;
+        HtmlString? content = null;
 
         while (content == null)
         {
@@ -69,7 +68,7 @@ public partial class FusionCacheTagHelperService
                 // There is a small race condition here between TryGetValue and TryAdd that might cause the
                 // content to be computed more than once. We don't care about this race as the probability of
                 // happening is very small and the impact is not critical.
-                var tcs = new TaskCompletionSource<IHtmlContent>(creationOptions: TaskCreationOptions.RunContinuationsAsynchronously);
+                var tcs = new TaskCompletionSource<HtmlString>(creationOptions: TaskCreationOptions.RunContinuationsAsynchronously);
 
                 workers.TryAdd(key, tcs.Task);
 
@@ -83,15 +82,7 @@ public partial class FusionCacheTagHelperService
                     if (!cacheRequest.HasValue)
                     {
                         // The value is not cached, we need to render the tag helper output
-                        var processedContent = await tagHelperOutput.GetChildContentAsync();
-
-                        var stringBuilder = new StringBuilder();
-                        using (var writer = new StringWriter(stringBuilder))
-                        {
-                            processedContent.WriteTo(writer, htmlEncoder);
-                        }
-
-                        content = new HtmlString(stringBuilder.ToString());
+                        content = await GetTagHelperContent(tagHelperOutput);
 
                         if (!IsCacheable(content.ToString().AsMemory(), options.CacheabilityRules))
                         {
@@ -122,7 +113,7 @@ public partial class FusionCacheTagHelperService
                     workers.TryRemove(key, out _);
 
                     // Failsafe, if the content could not be retreived/deserialized
-                    content ??= await tagHelperOutput.GetChildContentAsync();
+                    content ??= await GetTagHelperContent(tagHelperOutput);
 
                     // Notify all other awaiters to render the content
                     tcs.TrySetResult(content!);
@@ -135,6 +126,19 @@ public partial class FusionCacheTagHelperService
         }
 
         return content;
+    }
+
+    private async Task<HtmlString> GetTagHelperContent(TagHelperOutput output)
+    {
+        var processedContent = await output.GetChildContentAsync();
+
+        var stringBuilder = new StringBuilder();
+        using (var writer = new StringWriter(stringBuilder))
+        {
+            processedContent.WriteTo(writer, htmlEncoder);
+        }
+
+        return new HtmlString(stringBuilder.ToString());
     }
 
     private static bool IsCacheable(ReadOnlyMemory<char> value, IEnumerable<Func<ReadOnlyMemory<char>, bool>>? cacheabilityRules = null)

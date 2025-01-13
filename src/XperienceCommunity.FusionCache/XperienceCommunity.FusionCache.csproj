@@ -18,7 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
     <PackageReference Include="ZiggyCreatures.FusionCache" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
-    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson" />
+    <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack" />
   </ItemGroup>
   
 </Project>

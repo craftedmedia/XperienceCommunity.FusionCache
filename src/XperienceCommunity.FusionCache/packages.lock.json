@@ -91,13 +91,13 @@
           "ZiggyCreatures.FusionCache": "2.0.0-preview-4"
         }
       },
-      "ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson": {
+      "ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack": {
         "type": "Direct",
         "requested": "[2.0.0-preview-4, )",
         "resolved": "2.0.0-preview-4",
-        "contentHash": "fvoh1PnT7/aqPhU6YHvChi0tPQS6GpkjvSc19pmBZf8UwTgrfU1ENScH3hGXgzO6GG6/yCrfgW6DyY6eevGMlQ==",
+        "contentHash": "RSAIEKFbhIW3lBEH0plzGgyeIphraXQekKIG3sCf2rfxlVbeYUpHqwlA3fMmB2YuQVY3Wk9ZzcMaUxTHCeID4w==",
         "dependencies": {
-          "Newtonsoft.Json": "13.0.3",
+          "MessagePack": "3.0.308",
           "ZiggyCreatures.FusionCache": "2.0.0-preview-4"
         }
       },
@@ -443,6 +443,26 @@
           "MimeKit": "4.8.0",
           "System.Formats.Asn1": "8.0.1"
         }
+      },
+      "MessagePack": {
+        "type": "Transitive",
+        "resolved": "3.0.308",
+        "contentHash": "88zw/8RB2WU5UQR9qTbXpxG0gTvsdG/ue991kifYLILxDDr1ZpM1PIwbCMRUlh+E1GoqE/d159dARj1j9TTuSw==",
+        "dependencies": {
+          "MessagePack.Annotations": "3.0.308",
+          "MessagePackAnalyzer": "3.0.308",
+          "Microsoft.NET.StringTools": "17.11.4"
+        }
+      },
+      "MessagePack.Annotations": {
+        "type": "Transitive",
+        "resolved": "3.0.308",
+        "contentHash": "gATDsU/BzxjYOiQ6AIy0OwXC+24YLiGP9Hb6WSpJp6uuJtPALMBK+prMVHtThHkNseRzfYoF7MyQ6LURNbplmQ=="
+      },
+      "MessagePackAnalyzer": {
+        "type": "Transitive",
+        "resolved": "3.0.308",
+        "contentHash": "lEqNxGuLsmeuAdA1ZGmdBEGbXnWwqIVK/HAQ6/XgBI9g8a++Cz9EDZX2v/heM+BmE0Xi6euFB+63dMo+osvD5A=="
       },
       "Microsoft.AspNetCore.Antiforgery": {
         "type": "Transitive",
@@ -1136,6 +1156,11 @@
           "Microsoft.Extensions.Primitives": "2.2.0",
           "System.Buffers": "4.5.0"
         }
+      },
+      "Microsoft.NET.StringTools": {
+        "type": "Transitive",
+        "resolved": "17.11.4",
+        "contentHash": "mudqUHhNpeqIdJoUx2YDWZO/I9uEDYVowan89R6wsomfnUJQk6HteoQTlNjZDixhT2B4IXMkMtgZtoceIjLRmA=="
       },
       "Microsoft.NETCore.Platforms": {
         "type": "Transitive",

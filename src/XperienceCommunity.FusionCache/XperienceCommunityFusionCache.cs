@@ -13,7 +13,7 @@ using XperienceCommunity.FusionCache.Caching.Utilities;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
-using ZiggyCreatures.Caching.Fusion.Serialization.NewtonsoftJson;
+using ZiggyCreatures.Caching.Fusion.Serialization.NeueccMessagePack;
 
 namespace XperienceCommunity.FusionCache;
 
@@ -41,20 +41,9 @@ public static class XperienceCommunityFusionCache
         {
             // Set some sensible default cache durations.
             Duration = TimeSpan.FromMinutes(10),
-            DistributedCacheDuration = TimeSpan.FromMinutes(10),
 
-            // Allows returning of stale cache items if we lose connectivity to the DB for example.
-            IsFailSafeEnabled = true,
-            FailSafeMaxDuration = TimeSpan.FromHours(2),
-            FailSafeThrottleDuration = TimeSpan.FromSeconds(30),
-
-            // Controls timeouts for factory methods. If a method times out then we will just return a stale value.
-            FactorySoftTimeout = TimeSpan.FromMilliseconds(100),
-            FactoryHardTimeout = TimeSpan.FromSeconds(5),
-
-            // Set distributed cache timeouts. If a request times out, returns stale value.
-            DistributedCacheSoftTimeout = TimeSpan.FromSeconds(1),
-            DistributedCacheHardTimeout = TimeSpan.FromSeconds(2),
+            // Normally operations on the distributed cache are executed in a blocking fashion: setting this flag to true let them run in the background in a kind of fire-and-forget way.
+            // This will give a perf boost, but watch out for rare side effects.
             AllowBackgroundDistributedCacheOperations = true,
 
             // Introduces a bit of randomness, to prevent cache entries from expiring at the same exact time on different nodes.
@@ -67,7 +56,7 @@ public static class XperienceCommunityFusionCache
         // Configure fusion cache, and redis as our L2 cache.
         services.AddFusionCache()
                 .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                .WithSerializer(new FusionCacheNewtonsoftJsonSerializer())
+                .WithSerializer(new FusionCacheNeueccMessagePackSerializer())
                 .WithDistributedCache(new RedisCache(new RedisCacheOptions() { Configuration = options.RedisConnectionString }))
                 .WithBackplane(new RedisBackplane(new RedisBackplaneOptions() { Configuration = options.RedisConnectionString }));
 
