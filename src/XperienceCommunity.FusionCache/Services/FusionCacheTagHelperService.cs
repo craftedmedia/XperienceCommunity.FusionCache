@@ -89,7 +89,7 @@ public partial class FusionCacheTagHelperService
                             return content;
                         }
 
-                        await fusionCache.SetAsync(storageKey, content, new FusionCacheEntryOptions() { Duration = options.Duration }, tags: options.CacheDependencies);
+                        await fusionCache.SetAsync(storageKey, content, opts => opts.SetDuration(options.Duration), tags: options.CacheDependencies);
 
                         return content;
                     }

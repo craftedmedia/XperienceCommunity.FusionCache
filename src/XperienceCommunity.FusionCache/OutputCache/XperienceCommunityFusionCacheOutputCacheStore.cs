@@ -58,5 +58,5 @@ internal class XperienceCommunityFusionCacheOutputCacheStore : IOutputCacheStore
     /// <param name="validFor">The amount of time the entry will be kept in the cache before expiring, relative to now.</param>
     /// <param name="cancellationToken">Indicates that the operation should be cancelled.</param>
     /// <returns><see cref="ValueTask"/>.</returns>
-    public async ValueTask SetAsync(string key, byte[] value, string[]? tags, TimeSpan validFor, CancellationToken cancellationToken) => await fusionCache.SetAsync(key, value, new FusionCacheEntryOptions() { Duration = validFor, AllowBackgroundDistributedCacheOperations = true }, tags: tags, token: cancellationToken);
+    public async ValueTask SetAsync(string key, byte[] value, string[]? tags, TimeSpan validFor, CancellationToken cancellationToken) => await fusionCache.SetAsync(key, value, opts => opts.SetDuration(validFor), tags: tags, token: cancellationToken);
 }
