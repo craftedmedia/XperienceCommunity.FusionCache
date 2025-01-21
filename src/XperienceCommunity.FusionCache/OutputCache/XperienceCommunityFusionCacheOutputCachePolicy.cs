@@ -1,5 +1,4 @@
-﻿using CMS.ContactManagement;
-using CMS.Helpers;
+﻿using CMS.Helpers;
 
 using Kentico.Content.Web.Mvc;
 using Kentico.PageBuilder.Web.Mvc;
@@ -7,9 +6,13 @@ using Kentico.Web.Mvc;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 
 using XperienceCommunity.FusionCache.Caching.Extensions;
+using XperienceCommunity.FusionCache.Extensions;
+using XperienceCommunity.FusionCache.OutputCache;
+using XperienceCommunity.FusionCache.Services;
 
 namespace XperienceCommunity.FusionCache.Caching.OutputCache;
 
@@ -47,11 +50,8 @@ internal class XperienceCommunityFusionCacheOutputCachePolicy : IOutputCachePoli
         context.CacheVaryByRules.QueryKeys = "*";
         context.CacheVaryByRules.RouteValueNames = "*";
 
-        // Vary by current contact
-        if (ContactManagementContext.CurrentContact is not null && ContactManagementContext.CurrentContactID > 0)
-        {
-            context.CacheVaryByRules.VaryByValues.TryAdd(nameof(ContactManagementContext.CurrentContactID), ContactManagementContext.CurrentContactID.ToString());
-        }
+        // Add dynamic vary by option types
+        AddVaryByOptionTypes(context.HttpContext, context.CacheVaryByRules.VaryByValues);
 
         return ValueTask.CompletedTask;
     }
@@ -146,5 +146,36 @@ internal class XperienceCommunityFusionCacheOutputCachePolicy : IOutputCachePoli
         }
 
         return true;
+    }
+
+    private void AddVaryByOptionTypes(HttpContext? context, IDictionary<string, string> varyByValues)
+    {
+        if (context is null)
+        {
+            return;
+        }
+
+        var endpoint = context.GetEndpoint();
+
+        if (endpoint is null)
+        {
+            return;
+        }
+
+        var varyByAttribute = endpoint.Metadata.GetMetadata<XperienceFusionCacheVaryByOptionTypesAttribute>();
+
+        if (varyByAttribute?.VaryByOptionTypes is null)
+        {
+            return;
+        }
+
+        var varyByOptionTypes = context.RequestServices.GetRequiredService<CacheVaryByOptionService>().GetVaryByOptionsDictionary(varyByAttribute.VaryByOptionTypes);
+
+        if (varyByOptionTypes is null || !varyByOptionTypes.Any())
+        {
+            return;
+        }
+
+        varyByValues.AddRange(varyByOptionTypes);
     }
 }

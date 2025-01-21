@@ -95,7 +95,7 @@ public partial class FusionCacheTagHelperService
                     }
                     else
                     {
-                        return cacheRequest.Value;
+                        content = cacheRequest.Value;
                     }
                 }
                 catch (Exception exc)

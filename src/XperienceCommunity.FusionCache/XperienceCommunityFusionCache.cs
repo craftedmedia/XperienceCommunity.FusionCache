@@ -10,6 +10,7 @@ using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.OutputCache;
 using XperienceCommunity.FusionCache.Caching.Services;
 using XperienceCommunity.FusionCache.Caching.Utilities;
+using XperienceCommunity.FusionCache.Services;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
@@ -71,6 +72,7 @@ public static class XperienceCommunityFusionCache
         services.AddSingleton<SettingsKeyCacheKeyGenerator>();
         services.AddSingleton<GeneralObjectCacheKeysGenerator>();
         services.AddSingleton<DummyCacheKeysService>();
+        services.AddScoped<CacheVaryByOptionService>();
 
         // Register custom fusion cache output cache store and policy
         services.AddSingleton<IOutputCacheStore, XperienceCommunityFusionCacheOutputCacheStore>();

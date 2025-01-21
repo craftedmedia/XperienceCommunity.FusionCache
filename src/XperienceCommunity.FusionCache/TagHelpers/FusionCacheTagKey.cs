@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Primitives;
 
 using XperienceCommunity.FusionCache.Caching.TagHelpers;
+using XperienceCommunity.FusionCache.Services;
 
 namespace XperienceCommunity.FusionCache.TagHelpers;
 /// <summary>
@@ -24,6 +25,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
     private const string VaryByCookieName = "VaryByCookie";
     private const string VaryByUserName = "VaryByUser";
     private const string VaryByCulture = "VaryByCulture";
+    private const string VaryByOptionTypes = "VaryByOptionTypes";
 
     private static readonly char[] attributeSeparator = new[] { ',' };
     private static readonly Func<IRequestCookieCollection, string, string> cookieAccessor = (c, key) => c[key]!;
@@ -33,6 +35,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
 
     private readonly XperienceFusionCacheTagHelper tagHelper;
     private readonly TagHelperContext context;
+    private readonly CacheVaryByOptionService cacheVaryByOptionService;
     private readonly string prefix;
     private readonly string? varyBy;
     private readonly TimeSpan? duration;
@@ -42,6 +45,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
     private readonly IList<KeyValuePair<string, string>> cookies;
     private readonly bool varyByUser;
     private readonly bool varyByCulture;
+    private readonly Type[]? varyByOptionTypes;
     private readonly string username = string.Empty;
     private readonly CultureInfo? requestCulture;
     private readonly CultureInfo? requestUICulture;
@@ -54,14 +58,15 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
     /// </summary>
     /// <param name="tagHelper">Instance of the <see cref="XperienceFusionCacheTagHelper"/>.</param>
     /// <param name="context">Instance of the <see cref="TagHelperContext"/>.</param>
-    public FusionCacheTagKey(XperienceFusionCacheTagHelper tagHelper, TagHelperContext context)
+    /// <param name="cacheVaryByOptionService">Instance of the <see cref="CacheVaryByOptionService"/>.</param>
+    public FusionCacheTagKey(XperienceFusionCacheTagHelper tagHelper, TagHelperContext context, CacheVaryByOptionService cacheVaryByOptionService)
     {
         Key = tagHelper.Name;
         prefix = nameof(XperienceFusionCacheTagHelper);
 
         this.tagHelper = tagHelper;
         this.context = context;
-
+        this.cacheVaryByOptionService = cacheVaryByOptionService;
         var httpContext = tagHelper.ViewContext.HttpContext;
         var request = httpContext.Request;
 
@@ -73,6 +78,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
         routeValues = ExtractCollection(tagHelper.VaryByRoute, tagHelper.ViewContext.RouteData.Values, routeValueAccessor);
         varyByUser = tagHelper.VaryByUser;
         varyByCulture = tagHelper.VaryByCulture;
+        varyByOptionTypes = tagHelper.VaryByOptionTypes;
 
         if (varyByUser)
         {
@@ -121,6 +127,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
         AddStringCollection(builder, VaryByHeaderName, headers);
         AddStringCollection(builder, VaryByQueryName, queries);
         AddStringCollection(builder, VaryByRouteName, routeValues);
+        AddVaryByOptionCollection(builder, VaryByOptionTypes, varyByOptionTypes);
 
         if (varyByUser)
         {
@@ -190,8 +197,9 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
             AreSame(headers, other.headers) &&
             AreSame(queries, other.queries) &&
             AreSame(routeValues, other.routeValues) &&
-            (varyByUser == other.varyByUser &&
-                (!varyByUser || string.Equals(other.username, username, StringComparison.Ordinal))) &&
+            AreSame(varyByOptionTypes, other.varyByOptionTypes) &&
+            varyByUser == other.varyByUser &&
+                (!varyByUser || string.Equals(other.username, username, StringComparison.Ordinal)) &&
             CultureEquals();
 
         bool CultureEquals()
@@ -239,6 +247,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
         CombineCollectionHashCode(ref hashCode, VaryByHeaderName, headers);
         CombineCollectionHashCode(ref hashCode, VaryByQueryName, queries);
         CombineCollectionHashCode(ref hashCode, VaryByRouteName, routeValues);
+        CombineCollectionHashCode(ref hashCode, VaryByOptionTypes, varyByOptionTypes);
 
         hashcode = hashCode.ToHashCode();
 
@@ -284,7 +293,7 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
             return;
         }
 
-        // keyName(param1=value1|param2=value2)
+        // keyName(param1=value1||param2=value2)
         builder
             .Append(CacheKeyTokenSeparator)
             .Append(collectionName)
@@ -308,6 +317,48 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
         builder.Append(')');
     }
 
+    private void AddVaryByOptionCollection(
+        StringBuilder builder,
+        string collectionName,
+        Type[]? values)
+    {
+        var cacheVaryByOptions = cacheVaryByOptionService.GetVaryByOptions(values);
+
+        if (cacheVaryByOptions == null || !cacheVaryByOptions.Any())
+        {
+            return;
+        }
+
+        // keyName(value1||value2)
+        builder
+            .Append(CacheKeyTokenSeparator)
+            .Append(collectionName)
+            .Append('(');
+
+        for (int i = 0; i < cacheVaryByOptions.Count(); i++)
+        {
+            var item = cacheVaryByOptions.ElementAt(i);
+
+            string? key = item?.GetKey();
+
+            if (string.IsNullOrEmpty(key))
+            {
+                continue;
+            }
+
+            if (i > 0)
+            {
+                builder.Append(CacheKeyTokenSeparator);
+            }
+
+            builder
+                .Append(key)
+                .Append(CacheKeyTokenSeparator);
+        }
+
+        builder.Append(')');
+    }
+
     private static void CombineCollectionHashCode(
         ref HashCode hashCode,
         string collectionName,
@@ -322,6 +373,23 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
                 var item = values[i];
                 hashCode.Add(item.Key);
                 hashCode.Add(item.Value);
+            }
+        }
+    }
+
+    private static void CombineCollectionHashCode(
+        ref HashCode hashCode,
+        string collectionName,
+        Type[]? values)
+    {
+        if (values != null)
+        {
+            hashCode.Add(collectionName, StringComparer.Ordinal);
+
+            for (int i = 0; i < values.Length; i++)
+            {
+                var item = values[i];
+                hashCode.Add(item.FullName);
             }
         }
     }
@@ -342,6 +410,29 @@ public class FusionCacheTagKey : IEquatable<FusionCacheTagKey>
         {
             if (!string.Equals(values1[i].Key, values2[i].Key, StringComparison.Ordinal) ||
                 !string.Equals(values1[i].Value, values2[i].Value, StringComparison.Ordinal))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool AreSame(Type[]? values1, Type[]? values2)
+    {
+        if (values1 == values2)
+        {
+            return true;
+        }
+
+        if (values1 == null || values2 == null || values1.Length != values2.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < values1.Length; i++)
+        {
+            if (values1[i] != values2[i] || values1[i].FullName != values2[i].FullName)
             {
                 return false;
             }
