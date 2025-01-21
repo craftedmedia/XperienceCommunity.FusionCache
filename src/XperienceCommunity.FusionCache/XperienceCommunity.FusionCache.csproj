@@ -11,7 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommonServiceLocator" />
     <PackageReference Include="Kentico.Xperience.Core" />
     <PackageReference Include="Kentico.Xperience.WebApp" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" />

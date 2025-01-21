@@ -3,7 +3,7 @@ using CMS.Core;
 using CMS.DataEngine;
 using CMS.MediaLibrary;
 
-using CommonServiceLocator;
+using Microsoft.Extensions.DependencyInjection;
 
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.Services;
@@ -52,10 +52,15 @@ internal class MediaFileEventHooks : Module
         {
             if (e.Object is MediaFileInfo mediaFileInfo)
             {
-                var cacheKeyGenerator = ServiceLocator.Current.GetInstance<MediaFileCacheKeysGenerator>();
-                var dummyCacheKeysService = ServiceLocator.Current.GetInstance<DummyCacheKeysService>();
-                var cacheKeys = cacheKeyGenerator.GetDummyKeys(mediaFileInfo.FileGUID);
+                var cacheKeyGenerator = ServiceContainer.Instance.GetService<MediaFileCacheKeysGenerator>();
+                var dummyCacheKeysService = ServiceContainer.Instance.GetService<DummyCacheKeysService>();
 
+                if (cacheKeyGenerator is null || dummyCacheKeysService is null)
+                {
+                    return;
+                }
+
+                var cacheKeys = cacheKeyGenerator.GetDummyKeys(mediaFileInfo.FileGUID);
                 dummyCacheKeysService.TouchDummyKeys(cacheKeys);
             }
         }

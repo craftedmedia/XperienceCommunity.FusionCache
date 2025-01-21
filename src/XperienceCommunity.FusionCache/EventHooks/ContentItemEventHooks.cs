@@ -2,7 +2,7 @@
 using CMS.ContentEngine;
 using CMS.Core;
 
-using CommonServiceLocator;
+using Microsoft.Extensions.DependencyInjection;
 
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.Services;
@@ -55,10 +55,15 @@ internal class ContentItemEventHooks : CMS.DataEngine.Module
     {
         try
         {
-            var cacheKeyGenerator = ServiceLocator.Current.GetInstance<ContentItemCacheKeysGenerator>();
-            var dummyCacheKeysService = ServiceLocator.Current.GetInstance<DummyCacheKeysService>();
-            var cacheKeys = cacheKeyGenerator.GetDummyKeys(e);
+            var cacheKeyGenerator = ServiceContainer.Instance.GetService<ContentItemCacheKeysGenerator>();
+            var dummyCacheKeysService = ServiceContainer.Instance.GetService<DummyCacheKeysService>();
 
+            if (cacheKeyGenerator is null || dummyCacheKeysService is null)
+            {
+                return;
+            }
+
+            var cacheKeys = cacheKeyGenerator.GetDummyKeys(e);
             dummyCacheKeysService.TouchDummyKeys(cacheKeys);
         }
         catch (Exception exc)

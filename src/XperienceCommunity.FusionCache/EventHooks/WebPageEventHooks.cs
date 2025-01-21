@@ -3,9 +3,7 @@ using CMS.Core;
 using CMS.DataEngine;
 using CMS.Websites;
 
-using CommonServiceLocator;
-
-using Newtonsoft.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.Services;
@@ -58,10 +56,15 @@ internal class WebPageEventHooks : Module
     {
         try
         {
-            var cacheKeyGenerator = ServiceLocator.Current.GetInstance<WebPageCacheKeysGenerator>();
-            var dummyCacheKeysService = ServiceLocator.Current.GetInstance<DummyCacheKeysService>();
-            var cacheKeys = cacheKeyGenerator.GetDummyKeys(e);
+            var cacheKeyGenerator = ServiceContainer.Instance.GetService<WebPageCacheKeysGenerator>();
+            var dummyCacheKeysService = ServiceContainer.Instance.GetService<DummyCacheKeysService>();
 
+            if (cacheKeyGenerator is null || dummyCacheKeysService is null)
+            {
+                return;
+            }
+
+            var cacheKeys = cacheKeyGenerator.GetDummyKeys(e);
             dummyCacheKeysService.TouchDummyKeys(cacheKeys);
         }
         catch (Exception exc)

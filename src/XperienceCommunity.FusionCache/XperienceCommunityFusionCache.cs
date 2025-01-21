@@ -1,6 +1,4 @@
-﻿using CommonServiceLocator;
-
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
@@ -9,8 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.OutputCache;
 using XperienceCommunity.FusionCache.Caching.Services;
-using XperienceCommunity.FusionCache.Caching.Utilities;
 using XperienceCommunity.FusionCache.Services;
+using XperienceCommunity.FusionCache.Utilities;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
@@ -79,7 +77,7 @@ public static class XperienceCommunityFusionCache
         services.AddOutputCache(x => x.AddPolicy(options.OutputCachePolicyName, builder => builder.AddPolicy<XperienceCommunityFusionCacheOutputCachePolicy>().Expire(options.OutputCacheExpiration), true));
 
         // Configure CSL as can't use DI in Kentico modules :(
-        ServiceLocator.SetLocatorProvider(() => new MSServiceLocator(services.BuildServiceProvider()));
+        ServiceContainer.Instance = services.BuildServiceProvider();
 
         return services;
     }

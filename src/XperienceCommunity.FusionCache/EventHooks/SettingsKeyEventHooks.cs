@@ -2,7 +2,7 @@
 using CMS.Core;
 using CMS.DataEngine;
 
-using CommonServiceLocator;
+using Microsoft.Extensions.DependencyInjection;
 
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.Services;
@@ -46,10 +46,15 @@ internal class SettingsKeyEventHooks : Module
         {
             if (e.Object is SettingsKeyInfo settingsKeyInfo)
             {
-                var cacheKeyGenerator = ServiceLocator.Current.GetInstance<SettingsKeyCacheKeyGenerator>();
-                var dummyCacheKeysService = ServiceLocator.Current.GetInstance<DummyCacheKeysService>();
-                var cacheKeys = cacheKeyGenerator.GetDummyKeys(settingsKeyInfo.KeyName);
+                var cacheKeyGenerator = ServiceContainer.Instance.GetService<SettingsKeyCacheKeyGenerator>();
+                var dummyCacheKeysService = ServiceContainer.Instance.GetService<DummyCacheKeysService>();
 
+                if (cacheKeyGenerator is null || dummyCacheKeysService is null)
+                {
+                    return;
+                }
+
+                var cacheKeys = cacheKeyGenerator.GetDummyKeys(settingsKeyInfo.KeyName);
                 dummyCacheKeysService.TouchDummyKeys(cacheKeys);
             }
         }
