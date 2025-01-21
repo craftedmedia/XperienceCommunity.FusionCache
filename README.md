@@ -2,8 +2,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## Description
-This package integrates with the popular Hybrid Caching library known as [ZiggyCreatures.FusionCache](https://github.com/ZiggyCreatures/FusionCache) allowing for L1 + L2 caching within Xperience.
-It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom `FusionCache` backed cache tag helper and support for output caching.
+This package integrates with the popular Hybrid Caching library known as [ZiggyCreatures.FusionCache](https://github.com/ZiggyCreatures/FusionCache) providing a true L1 + L2 layered caching solution within Xperience by Kentico.
+
+It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom `FusionCache` backed cache tag helper and support for output caching, with content personalization handled out of the box.
 
 ### Library Version Matrix
 
@@ -99,7 +100,8 @@ And include the tag helper in your view:
 <xperience-fusion-cache
     name="home-page-cache"
     cache-dependencies="@(new string[] { "webpageitem|byid|1", "contentitem|bycontenttype|Medio.Clinic" })"
-    duration="@TimeSpan.FromMinutes(5)">
+    duration="@TimeSpan.FromMinutes(5)"
+    vary-by-option-types="@(new[] { typeof(ContactGroupVaryByOption) })">
 
 @* Cached HTML goes here *@
 
@@ -147,6 +149,62 @@ Policy defaults can be customized via `appsettings.json`:
   "OutputCacheExpiration": "00:05:00"
 }
 ```
+### Content Personalization
+The library provides several ways to inject unique vary-by keys into each cache items key entry, granting compatibility with the widget personalization feature within Xperience:
+https://docs.kentico.com/business-users/digital-marketing/widget-personalization
+
+To utilize this feature, simply implement your custom `ICacheVaryByOption` types, ensuring a unique key is returned based on your own use case:
+https://docs.kentico.com/developers-and-admins/development/caching/output-caching#implement-custom-personalization-options
+
+Complete example:
+```
+public class ContactGroupVaryByOption : ICacheVaryByOption
+{
+    public string GetKey()
+    {
+        var contact = ContactManagementContext.GetCurrentContact();
+
+        if (contact?.ContactGroups is null || !contact.ContactGroups.Any())
+        {
+            return string.Empty;
+        }
+
+        var contactGroups = contact.ContactGroups
+            .OrderBy(x => x.ContactGroupName)
+            .Select(y => y.ContactGroupName);
+
+        return string.Join("||", ["VaryByContactGroup", .. contactGroups]);
+    }
+}
+```
+
+Then pass these types to the `vary-by-option-types` attribute, if using the `<xperience-fusion-cache />` tag helper, e.g:
+
+```
+<xperience-fusion-cache
+    name="my-widget-cache"
+    duration="@TimeSpan.FromMinutes(5)"
+    vary-by-option-types="@(new[] { typeof(ContactGroupVaryByOption) })">
+
+@* Cached HTML which should vary by contact group goes here *@
+
+</xperience-fusion-cache>
+```
+
+Or alternatively, if using controller level `[OutputCache]`, decorate the action result with `[XperienceFusionCacheVaryByOptionTypes]` and specify your custom `ICacheVaryByOption` types in the constructor, e.g:
+```
+[OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]
+[XperienceFusionCacheVaryByOptionTypes(VaryByOptionTypes = [typeof(ContactGroupVaryByOption)])]
+public async Task<IActionResult> Index()
+{
+    // Some expensive logic...
+
+    return new TemplateResult();
+}
+```
+
+This ensures that your custom vary by option implementations are considered when constructing a unique cache key for the cache item.
+
 
 ### Extending cache invalidation for custom object types
 
@@ -175,3 +233,4 @@ To see the guidelines for Contributing to Kentico open source software, please s
 ## License
 
 Distributed under the MIT License. See [`LICENSE.md`](./LICENSE.md) for more information.
+
