@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 using XperienceCommunity.FusionCache.Caching.Services;
+using XperienceCommunity.FusionCache.Services;
 using XperienceCommunity.FusionCache.TagHelpers;
 
 namespace XperienceCommunity.FusionCache.Caching.TagHelpers;
@@ -20,18 +21,22 @@ public class XperienceFusionCacheTagHelper : TagHelper
 {
     private readonly FusionCacheTagHelperService fusionCacheTagHelperService;
     private readonly IWebsiteChannelContext websiteChannelContext;
+    private readonly CacheVaryByOptionService cacheVaryByOptionService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="XperienceFusionCacheTagHelper"/> class.
     /// </summary>
     /// <param name="fusionCacheTagHelperService">Instance of the <see cref="FusionCacheTagHelperService"/>.</param>
     /// <param name="websiteChannelContext">Instance of <see cref="IWebsiteChannelContext"/>.</param>
+    /// <param name="cacheVaryByOptionService">Instance of the <see cref="CacheVaryByOptionService"/>.</param>
     public XperienceFusionCacheTagHelper(
         FusionCacheTagHelperService fusionCacheTagHelperService,
-        IWebsiteChannelContext websiteChannelContext)
+        IWebsiteChannelContext websiteChannelContext,
+        CacheVaryByOptionService cacheVaryByOptionService)
     {
         this.fusionCacheTagHelperService = fusionCacheTagHelperService;
         this.websiteChannelContext = websiteChannelContext;
+        this.cacheVaryByOptionService = cacheVaryByOptionService;
     }
 
     /// <summary>
@@ -95,6 +100,12 @@ public class XperienceFusionCacheTagHelper : TagHelper
     public bool VaryByCulture { get; set; }
 
     /// <summary>
+    /// Gets or sets and array of <see cref="Type"/> values referencing custom vary by implementations.
+    /// </summary>
+    [HtmlAttributeName("vary-by-option-types")]
+    public Type[]? VaryByOptionTypes { get; set; }
+
+    /// <summary>
     /// Gets or sets the duration to cache for.
     /// </summary>
     [HtmlAttributeName("duration")]
@@ -126,7 +137,7 @@ public class XperienceFusionCacheTagHelper : TagHelper
 
         if (Enabled && !websiteChannelContext.IsPreview)
         {
-            var cacheTagKey = new FusionCacheTagKey(this, context);
+            var cacheTagKey = new FusionCacheTagKey(this, context, cacheVaryByOptionService);
 
             content = await fusionCacheTagHelperService.ProcessContentAsync(output, cacheTagKey, new XperienceFusionCacheTagHelperOptions()
             {
