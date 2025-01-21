@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <Title>XperienceCommunity.FusionCache</Title>
     <Authors>Duane Gibbs</Authors>
-    <Description>This package integrates with the popular Hybrid Caching library known as ZiggyCreatures.FusionCache allowing for L1 + L2 caching within Xperience. It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom FusionCache backed cache tag helper and support for output caching.</Description>
+    <Description>This package integrates with the popular Hybrid Caching library known as ZiggyCreatures.FusionCache (https://github.com/ZiggyCreatures/FusionCache) providing a true L1 + L2 layered caching solution within Xperience by Kentico.</Description>
     <PackageTags>xperience;kentico;aspnetcore;cache;fusioncache</PackageTags>
   </PropertyGroup>
 
