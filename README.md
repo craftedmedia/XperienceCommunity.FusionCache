@@ -60,6 +60,46 @@ And include `UseXperienceFusionCache()` before `app.Run()`:
 app.UseXperienceFusionCache();
 ```
 
+### Update _ViewImports.cshtml
+
+Include the following in your `_ViewImports.cshtml` file:
+
+```
+@addTagHelper *, XperienceCommunity.FusionCache
+```
+
+### Output caching
+
+Use either:
+
+- Tag helper
+    - `<xperience-fusion-cache />`
+- Output cache policy
+    - `[OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]`
+
+### Services
+
+Inject `IFusionCache` and use the Get/Set methods, providing `tags` as Kentico cache dependency keys:
+
+```
+var products = await this.fusionCache.GetOrSetAsync<IEnumerable<ProductDTO>?>(
+            key: "FooWebsite.Products",
+            factory: async (ctx, _) =>
+            {
+                var products = await this.GetproductsAsync();
+
+                if (products is null)
+                {
+                    ctx.Options.Duration = TimeSpan.Zero;
+                    return null;
+                }
+
+                return products;
+            },
+            tags: [CacheHelper.BuildCacheItemName(new[] { ProductItem.CONTENT_TYPE_NAME, "all" })]);
+```
+
+
 And that should be enough to get going! Read on for a more info.
 
 ## Full Instructions
@@ -88,13 +128,7 @@ Any option available on the [FusionCacheEntryOptions](https://github.com/ZiggyCr
 
 The package provides a custom cache tag helper backed by `FusionCache`.
 
-To use it, add the following include to your `_ViewImports.cshtml` file:
-
-```
-@addTagHelper *, XperienceCommunity.FusionCache
-```
-
-And include the tag helper in your view:
+To use it, include the tag helper in your view:
 
 ```
 <xperience-fusion-cache
@@ -108,7 +142,26 @@ And include the tag helper in your view:
 </xperience-fusion-cache>
 ```
 
-The tag helper supports Kentico cache dependencies and all standard `vary-by-*` attributes as well as a `duration` property, however there is **no** support for `expires-sliding`, `expires-on`, and `expires-after` since `FusionCache` only supports `Duration`.
+See below, for a full list of options:
+
+| Option               | Description                                                                                                                                                                 | Example                                                           | Default    |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| name                 | Required. A unique name for the tag instance.                                                                                                                             | `"product-listing"`                                                 | `null`     |
+| enabled              | A value indicating whether caching is enabled for the tag.                                                                                                                  | `true`                                                            | `true`     |
+| cache-dependencies   | Collection of cache dependencies for the cache entry. The associated cache item will be cleared when one of the dependencies is touched by the system.                     | `new string[] { "webpageitem\|byid\|3" }`                         | `null`     |
+| cacheability-rules   | Collection of custom rules that determine whether the tag inner content can be cached based on whether the `IReadOnlyMemory<char>` pattern was found within the tags HTML. | `Func<ReadOnlyMemory<char>, bool> CacheDisabled = (content) => content.Span.IndexOf("cache-disabled=\"True\"") <= -1` | `null`     |
+| duration             | Cache duration.                                                                                                                                                              | `TimeSpan.FromMinutes(5)`                                         | 5 minutes  |
+| vary-by              | Custom vary by string.                                                                                                                                                     | `$"product-{product.Id}"`                                         | `null`     |
+| vary-by-header       | Vary the cache by the provided header(s).                                                                                                                                  | `"header1,header2"`                                               | `null`     |
+| vary-by-query        | Vary the cache by the provided query parameter(s).                                                                                                                         | `"page,filter"`                                                   | `null`     |
+| vary-by-route        | Vary the cache by the provided route parameter(s).                                                                                                                         | `"lang,id"`                                                       | `null`     |
+| vary-by-cookie       | Vary the cache by the provided cookie name(s).                                                                                                                             | `"cookie1,cookie2"`                                               | `null`     |
+| vary-by-user         | Vary the cache by the current user.                                                                                                                                        | `true`                                                            | `false`    |
+| vary-by-culture      | Vary the cache by the current request culture.                                                                                                                             | `true`                                                            | `false`    |
+| vary-by-option-types | `ICacheVaryByOption` implementations to vary the cache by. Useful for content personalization.                                                                             | `new[] { typeof(ContactGroupVaryByOption) }`                      | `null`     |
+
+
+
 
 ### Output cache
 
