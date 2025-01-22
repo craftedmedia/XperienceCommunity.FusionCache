@@ -100,13 +100,13 @@ var products = await this.fusionCache.GetOrSetAsync<IEnumerable<ProductDTO>?>(
 ```
 
 
-And that should be enough to get going! Read on for a more info.
+And that should be enough to get going! Read on for more info.
 
 ## Full Instructions
 
 ### Default Cache options
 
-You can choose to configure some default `FusionCacheEntryOptions` via `appsettings.json` config. These will be used as the default for all cache entries, although they can be overridden directly when using any of the methods within `IFusionCache`.
+You can choose to configure some default `FusionCacheEntryOptions` via `appsettings.json` config. These will be used as the default for all cache entries, although they can be overridden on a per-call basis when using `IFusionCache`. See: [https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/Options.md](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/Options.md#defaultentryoptions)
 
 Example:
 
