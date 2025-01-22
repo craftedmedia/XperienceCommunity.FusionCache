@@ -9,11 +9,11 @@
     <VersionPrefix>1.0.0</VersionPrefix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
 
-    <PackageProjectUrl>https://github.com/DGibbsCrafted/XperienceCommunity.FusionCache</PackageProjectUrl>
-    <PackageReleaseNotes>https://github.com/DGibbsCrafted/XperienceCommunity.FusionCache/releases</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/craftedmedia/XperienceCommunity.FusionCache</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/craftedmedia/XperienceCommunity.FusionCache/releases</PackageReleaseNotes>
     <PackageIcon>logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>xperience;kentico;aspnetcore;cache;fusioncache</PackageTags>
+    <PackageTags>xperience;kentico;aspnetcore;cache;fusioncache;hybrid-cache;caching;performance;csharp</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
