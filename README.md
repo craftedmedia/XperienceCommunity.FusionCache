@@ -6,6 +6,8 @@ This package integrates with the popular Hybrid Caching library known as [ZiggyC
 
 It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom `FusionCache` backed cache tag helper and support for output caching, with content personalization handled out of the box.
 
+If you're unfamiliar with Hybrid Caching, I would recommend reading the gentle intro over at: https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/AGentleIntroduction.md
+
 ### Library Version Matrix
 
 | Xperience Version | Library Version |
