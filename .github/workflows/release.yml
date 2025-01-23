@@ -38,5 +38,9 @@ jobs:
       - name: Build project
         run: dotnet build --configuration Release --no-restore
 
+      - run: |
+          echo "Deploying version : ${{ steps.version_step.outputs.fullSemVer }}"
+          name: Display deployed version
+        
       - name: Pack NuGet package
         run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version_step.outputs.fullSemVer }}
