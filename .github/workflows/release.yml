@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+  
 jobs:
   publish:
     runs-on: ubuntu-latest
