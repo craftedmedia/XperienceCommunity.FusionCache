@@ -27,7 +27,7 @@ jobs:
           versionSpec: '6.0.x'
 
       - name: Determine Version
-        id: gitversion
+        id: version_step
         uses: gittools/actions/gitversion/execute@v3.1.11
         with:
           updateAssemblyInfo: true
@@ -39,8 +39,8 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - run: |
-          echo "Deploying version : ${{ steps.version_step.outputs.fullSemVer }}"
-          name: Display deployed version
+          echo "Version : ${{ steps.version_step.outputs.fullSemVer }}"
+        name: Display version
         
       - name: Pack NuGet package
         run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version_step.outputs.fullSemVer }}
