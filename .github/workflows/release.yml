@@ -31,16 +31,16 @@ jobs:
         uses: gittools/actions/gitversion/execute@v3.1.11
         with:
           updateAssemblyInfo: true
+
+      - run: |
+          echo "Version : ${{ steps.version_step.outputs.MajorMinorPatch }}"
+        name: Display version
           
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build project
         run: dotnet build --configuration Release --no-restore
-
-      - run: |
-          echo "Version : ${{ steps.version_step.outputs.fullSemVer }}"
-        name: Display version
         
       - name: Pack NuGet package
-        run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version_step.outputs.fullSemVer }}
+        run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version_step.outputs.MajorMinorPatch }}
