@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
+  
 jobs:
   publish:
     runs-on: windows-latest
@@ -44,6 +44,5 @@ jobs:
       - name: Pack NuGet package
         run: dotnet pack --configuration Release --no-build --output ${{ github.workspace }}\nupkg /p:Version=${{ steps.version_step.outputs.MajorMinorPatch }}
 
-      - name: Verify package exists
-        run: dir ${{ github.workspace }}\nupkg
-        shell: cmd
+      - name: Publish to NuGet
+        run: dotnet nuget push ${{ github.workspace }}\nupkg\*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
