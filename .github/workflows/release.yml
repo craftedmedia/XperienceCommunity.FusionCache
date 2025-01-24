@@ -42,9 +42,8 @@ jobs:
         run: dotnet build --configuration Release --no-restore
         
       - name: Pack NuGet package
-        run: dotnet pack --configuration Release --no-build --output ${{ github.workspace }}/nupkg /p:Version=${{ steps.version_step.outputs.MajorMinorPatch }}
+        run: dotnet pack --configuration Release --no-build --output ${{ github.workspace }}\nupkg /p:Version=${{ steps.version_step.outputs.MajorMinorPatch }}
 
       - name: Verify package exists
-        run: |
-          dir ${{ github.workspace }}/nupkg
+        run: dir ${{ github.workspace }}\nupkg
         shell: cmd
