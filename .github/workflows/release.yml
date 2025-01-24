@@ -4,7 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
   
 jobs:
   publish:
@@ -44,3 +43,9 @@ jobs:
         
       - name: Pack NuGet package
         run: dotnet pack --configuration Release --no-build --output ./nupkg /p:Version=${{ steps.version_step.outputs.MajorMinorPatch }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: nuget-package
+          path: ./nupkg/*.nupkg
