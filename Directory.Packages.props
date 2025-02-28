@@ -10,8 +10,13 @@
 	<PackageVersion Include="Kentico.Xperience.WebApp" Version="30.0.0" />
 	<PackageVersion Include="Microsoft.AspNetCore.Mvc.TagHelpers" Version="2.3.0" />
 	<PackageVersion Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.0" />
-	<PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.0.0" />
-	<PackageVersion Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" Version="2.0.0" />
-	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack" Version="2.0.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.CysharpMemoryPack" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.ServiceStackJson" Version="2.1.0" />
+	<PackageVersion Include="ZiggyCreatures.FusionCache.Serialization.ProtoBufNet" Version="2.1.0" />
   </ItemGroup>
 </Project>

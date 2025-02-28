@@ -23,12 +23,7 @@ internal class XperienceCommunityFusionCacheOutputCacheStore : IOutputCacheStore
     /// <param name="tag">The tag to evict.</param>
     /// <param name="cancellationToken">Indicates that the operation should be cancelled.</param>
     /// <returns><see cref="ValueTask"/>.</returns>
-    public ValueTask EvictByTagAsync(string tag, CancellationToken cancellationToken)
-    {
-        fusionCache.RemoveByTag(tag, token: cancellationToken);
-
-        return ValueTask.CompletedTask;
-    }
+    public async ValueTask EvictByTagAsync(string tag, CancellationToken cancellationToken) => await fusionCache.RemoveByTagAsync(tag, token: cancellationToken);
 
     /// <summary>
     /// Gets the cached response for the given key, if it exists.
@@ -37,17 +32,7 @@ internal class XperienceCommunityFusionCacheOutputCacheStore : IOutputCacheStore
     /// <param name="key">The cache key to look up.</param>
     /// <param name="cancellationToken">Indicates that the operation should be cancelled.</param>
     /// <returns>The response cache entry if it exists; otherwise <c>null</c>.</returns>
-    public async ValueTask<byte[]?> GetAsync(string key, CancellationToken cancellationToken)
-    {
-        var cacheEntry = await fusionCache.TryGetAsync<byte[]>(key, token: cancellationToken);
-
-        if (!cacheEntry.HasValue)
-        {
-            return null;
-        }
-
-        return cacheEntry.Value;
-    }
+    public async ValueTask<byte[]?> GetAsync(string key, CancellationToken cancellationToken) => await fusionCache.GetOrDefaultAsync<byte[]?>(key, null, token: cancellationToken);
 
     /// <summary>
     /// Stores the given response in the response cache.
@@ -58,5 +43,5 @@ internal class XperienceCommunityFusionCacheOutputCacheStore : IOutputCacheStore
     /// <param name="validFor">The amount of time the entry will be kept in the cache before expiring, relative to now.</param>
     /// <param name="cancellationToken">Indicates that the operation should be cancelled.</param>
     /// <returns><see cref="ValueTask"/>.</returns>
-    public async ValueTask SetAsync(string key, byte[] value, string[]? tags, TimeSpan validFor, CancellationToken cancellationToken) => await fusionCache.SetAsync(key, value, opts => opts.SetDuration(validFor), tags: tags, token: cancellationToken);
+    public async ValueTask SetAsync(string key, byte[] value, string[]? tags, TimeSpan validFor, CancellationToken cancellationToken) => await fusionCache.SetAsync(key, value, opts => opts.SetDuration(validFor).SetSize(value.Length), tags: tags, token: cancellationToken);
 }

@@ -28,5 +28,10 @@ namespace XperienceCommunity.FusionCache
         /// Gets or sets the default fusion cache entry options.
         /// </summary>
         public FusionCacheEntryOptions? DefaultFusionCacheEntryOptions { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default serializer to use.
+        /// </summary>
+        public string DefaultSerializer { get; set; } = "NewtonsoftJson";
     }
 }

@@ -126,6 +126,27 @@ Example:
 
 Any option available on the [FusionCacheEntryOptions](https://github.com/ZiggyCreatures/FusionCache/blob/f3896a5f5b6e21f918009d687520938d322f79f4/src/ZiggyCreatures.FusionCache/FusionCacheEntryOptions.cs) is also available to be set here.
 
+### Configuring Serialization
+[NewtonsoftJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson/) is configured as the default serializer for maximum compatibility and ease of use, however it's possible to configure any of the following serializers:
+
+- [SystemTextJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.SystemTextJson)
+- [CysharpMemoryPack](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.CysharpMemoryPack)
+- [NeueccMessagePack](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack)
+- [ServiceStackJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.ServiceStackJson)
+- [ProtoBufNet](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.ProtoBufNet)
+
+See https://github.com/ZiggyCreatures/FusionCache/pull/349 for performance benchmarks for each of these serializers.
+
+To configure a different serializer, simply specify the `DefaultSerializer` in options:
+```
+"XperienceFusionCache": {
+  "RedisConnectionString": "...",
+  "DefaultSerializer": "NeueccMessagePack" // OR 'ServiceStackJson' etc...
+},
+```
+`FusionCache` will now use the configured serializer instead of the default. Each serializer has its pros, cons and individual quirks you should familiarize yourself with before using.
+
+
 ### Fusion Cache Tag Helper
 
 The package provides a custom cache tag helper backed by `FusionCache`.

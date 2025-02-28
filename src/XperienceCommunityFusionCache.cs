@@ -12,7 +12,13 @@ using XperienceCommunity.FusionCache.Utilities;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
+using ZiggyCreatures.Caching.Fusion.Serialization;
+using ZiggyCreatures.Caching.Fusion.Serialization.CysharpMemoryPack;
 using ZiggyCreatures.Caching.Fusion.Serialization.NeueccMessagePack;
+using ZiggyCreatures.Caching.Fusion.Serialization.NewtonsoftJson;
+using ZiggyCreatures.Caching.Fusion.Serialization.ProtoBufNet;
+using ZiggyCreatures.Caching.Fusion.Serialization.ServiceStackJson;
+using ZiggyCreatures.Caching.Fusion.Serialization.SystemTextJson;
 
 namespace XperienceCommunity.FusionCache;
 
@@ -55,7 +61,7 @@ public static class XperienceCommunityFusionCache
         // Configure fusion cache, and redis as our L2 cache.
         services.AddFusionCache()
                 .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                .WithSerializer(new FusionCacheNeueccMessagePackSerializer())
+                .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
                 .WithDistributedCache(new RedisCache(new RedisCacheOptions() { Configuration = options.RedisConnectionString }))
                 .WithBackplane(new RedisBackplane(new RedisBackplaneOptions() { Configuration = options.RedisConnectionString }));
 
@@ -93,4 +99,14 @@ public static class XperienceCommunityFusionCache
 
         return app;
     }
+
+    private static IFusionCacheSerializer GetConfiguredSerializer(string serializer) => serializer switch
+    {
+        "NeueccMessagePack" => new FusionCacheNeueccMessagePackSerializer(),
+        "CysharpMemoryPack" => new FusionCacheCysharpMemoryPackSerializer(),
+        "SystemTextJson" => new FusionCacheSystemTextJsonSerializer(),
+        "ServiceStackJson" => new FusionCacheServiceStackJsonSerializer(),
+        "ProtoBufNet" => new FusionCacheProtoBufNetSerializer(),
+        _ => new FusionCacheNewtonsoftJsonSerializer(),
+    };
 }
