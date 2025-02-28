@@ -20,7 +20,12 @@
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
 		<PackageReference Include="ZiggyCreatures.FusionCache" />
 		<PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
+		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson" />
 		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.NeueccMessagePack" />
+		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.CysharpMemoryPack" />
+		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />
+		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.ServiceStackJson" />
+		<PackageReference Include="ZiggyCreatures.FusionCache.Serialization.ProtoBufNet" />
 	</ItemGroup>
 
 </Project>

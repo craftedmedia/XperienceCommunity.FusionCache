@@ -53,7 +53,7 @@ public partial class FusionCacheTagHelperService
     /// <param name="key">The key in the storage.</param>
     /// <param name="options">Cache options.</param>
     /// <returns>A cached or new content for the cache tag helper.</returns>
-    public async Task<HtmlString> ProcessContentAsync(
+    public async ValueTask<HtmlString> ProcessContentAsync(
         TagHelperOutput tagHelperOutput,
         FusionCacheTagKey key,
         XperienceFusionCacheTagHelperOptions options)
