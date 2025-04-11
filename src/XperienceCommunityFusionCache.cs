@@ -55,6 +55,12 @@ public static class XperienceCommunityFusionCache
             JitterMaxDuration = TimeSpan.FromSeconds(2),
         };
 
+        if (options.DevMode)
+        {
+            options.DefaultFusionCacheEntryOptions.SkipDistributedCacheRead = true;
+            options.DefaultFusionCacheEntryOptions.SkipDistributedCacheWrite = true;
+        }
+
         // This will be our primary L1 cache.
         services.AddMemoryCache();
 

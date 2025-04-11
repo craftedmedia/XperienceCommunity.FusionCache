@@ -33,5 +33,10 @@ namespace XperienceCommunity.FusionCache
         /// Gets or sets the default serializer to use.
         /// </summary>
         public string DefaultSerializer { get; set; } = "NewtonsoftJson";
+
+        /// <summary>
+        /// Gets or sets a value indicating whether dev mode is enabled (disables L2 cache).
+        /// </summary>
+        public bool DevMode { get; set; }
     }
 }
