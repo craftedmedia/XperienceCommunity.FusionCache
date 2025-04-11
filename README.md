@@ -146,6 +146,18 @@ To configure a different serializer, simply specify the `DefaultSerializer` in o
 ```
 `FusionCache` will now use the configured serializer instead of the default. Each serializer has its pros, cons and individual quirks you should familiarize yourself with before using.
 
+### Development Mode	
+The library has a development mode setting which will skip read/writes to the L2 cache for ease of local development.
+
+To enable development mode, add the `DevMode` property to `appsettings.json`:
+```
+"XperienceFusionCache": {
+  //...
+  "DevMode": true
+},
+```
+
+
 
 ### Fusion Cache Tag Helper
 
