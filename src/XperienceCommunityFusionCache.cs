@@ -4,6 +4,8 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
+using StackExchange.Redis;
+
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.OutputCache;
 using XperienceCommunity.FusionCache.Caching.Services;
@@ -12,6 +14,7 @@ using XperienceCommunity.FusionCache.Utilities;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
+using ZiggyCreatures.Caching.Fusion.Locking.Distributed.Redis;
 using ZiggyCreatures.Caching.Fusion.Serialization;
 using ZiggyCreatures.Caching.Fusion.Serialization.CysharpMemoryPack;
 using ZiggyCreatures.Caching.Fusion.Serialization.NeueccMessagePack;
@@ -55,21 +58,64 @@ public static class XperienceCommunityFusionCache
             JitterMaxDuration = TimeSpan.FromSeconds(2),
         };
 
-        if (options.DevMode)
-        {
-            options.DefaultFusionCacheEntryOptions.SkipDistributedCacheRead = true;
-            options.DefaultFusionCacheEntryOptions.SkipDistributedCacheWrite = true;
-        }
-
         // This will be our primary L1 cache.
         services.AddMemoryCache();
 
-        // Configure fusion cache, and redis as our L2 cache.
-        services.AddFusionCache()
-                .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
-                .WithDistributedCache(new RedisCache(new RedisCacheOptions() { Configuration = options.RedisConnectionString }))
-                .WithBackplane(new RedisBackplane(new RedisBackplaneOptions() { Configuration = options.RedisConnectionString }));
+        if (options.DevMode)
+        {
+            // Use isolated in-memory cache when in dev mode.
+            services.AddFusionCache()
+                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
+                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
+                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer));
+        }
+        else if (options.UseConnectionMultiplexer)
+        {
+            // Configure fusion cache with connection multiplexer.
+            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(options.RedisConnectionString));
+            services.AddFusionCache()
+                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
+                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
+                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
+                    .WithDistributedCache(sp =>
+                    {
+                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+
+                        return new RedisCache(new RedisCacheOptions
+                        {
+                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
+                        });
+                    })
+                    .WithBackplane(sp =>
+                    {
+                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+
+                        return new RedisBackplane(new RedisBackplaneOptions
+                        {
+                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
+                        });
+                    })
+                    .WithDistributedLocker(sp =>
+                    {
+                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
+
+                        return new RedisDistributedLocker(new RedisDistributedLockerOptions
+                        {
+                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
+                        });
+                    });
+        }
+        else
+        {
+            // Configure fusion cache by connection string.
+            services.AddFusionCache()
+                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
+                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
+                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
+                    .WithDistributedCache(new RedisCache(new RedisCacheOptions { Configuration = options.RedisConnectionString }))
+                    .WithBackplane(new RedisBackplane(new RedisBackplaneOptions { Configuration = options.RedisConnectionString }))
+                    .WithDistributedLocker(new RedisDistributedLocker(new RedisDistributedLockerOptions { Configuration = options.RedisConnectionString }));
+        }
 
         // Register our fusion cache tag helper service
         services.AddSingleton<FusionCacheTagHelperService>();
@@ -88,9 +134,6 @@ public static class XperienceCommunityFusionCache
         services.AddSingleton<IOutputCacheStore, XperienceCommunityFusionCacheOutputCacheStore>();
         services.AddOutputCache(x => x.AddPolicy(options.OutputCachePolicyName, builder => builder.AddPolicy<XperienceCommunityFusionCacheOutputCachePolicy>().Expire(options.OutputCacheExpiration), true));
 
-        // Configure CSL as can't use DI in Kentico modules :(
-        ServiceContainer.Instance = services.BuildServiceProvider();
-
         return services;
     }
 
@@ -101,6 +144,8 @@ public static class XperienceCommunityFusionCache
     /// <returns><see cref="IApplicationBuilder"/>.</returns>
     public static IApplicationBuilder UseXperienceFusionCache(this IApplicationBuilder app)
     {
+        ServiceContainer.Instance = app.ApplicationServices;
+
         app.UseOutputCache();
 
         return app;

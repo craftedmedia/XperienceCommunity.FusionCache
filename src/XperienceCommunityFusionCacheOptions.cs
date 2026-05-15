@@ -38,5 +38,10 @@ namespace XperienceCommunity.FusionCache
         /// Gets or sets a value indicating whether dev mode is enabled (disables L2 cache).
         /// </summary>
         public bool DevMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to reuse a connection multiplexer for better performance and use of resources.
+        /// </summary>
+        public bool UseConnectionMultiplexer { get; set; } = true;
     }
 }
