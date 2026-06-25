@@ -38,5 +38,11 @@ namespace XperienceCommunity.FusionCache
         /// Gets or sets a value indicating whether dev mode is enabled (disables L2 cache).
         /// </summary>
         public bool DevMode { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to register event handlers for the admin only (applicable to admin separated environments only).
+        /// Results in fewer redis calls / backplane operations.
+        /// </summary>
+        public bool RegisterEventHandlersOnlyInAdmin { get; set; }
     }
 }

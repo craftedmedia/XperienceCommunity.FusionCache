@@ -2,12 +2,14 @@
 
 using Microsoft.Extensions.Logging;
 
+using XperienceCommunity.FusionCache.KeyGenerators;
+
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for settings key items.
 /// </summary>
-internal class SettingsKeyCacheKeyGenerator
+internal class SettingsKeyCacheKeyGenerator : ICacheKeysGenerator<string>
 {
     private readonly ILogger<SettingsKeyCacheKeyGenerator> logger;
 
