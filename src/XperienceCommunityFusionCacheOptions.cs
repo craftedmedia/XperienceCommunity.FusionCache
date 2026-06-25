@@ -40,8 +40,9 @@ namespace XperienceCommunity.FusionCache
         public bool DevMode { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to reuse a connection multiplexer for better performance and use of resources.
+        /// Gets or sets a value indicating whether to register event handlers for the admin only (applicable to admin separated environments only).
+        /// Results in fewer redis calls / backplane operations.
         /// </summary>
-        public bool UseConnectionMultiplexer { get; set; } = true;
+        public bool RegisterEventHandlersOnlyInAdmin { get; set; }
     }
 }

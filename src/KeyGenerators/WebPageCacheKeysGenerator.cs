@@ -3,14 +3,15 @@ using CMS.Helpers;
 
 using Microsoft.Extensions.Logging;
 
-using XperienceCommunity.FusionCache.Caching.EventHooks;
+using XperienceCommunity.FusionCache.EventHooks.WebPage;
+using XperienceCommunity.FusionCache.KeyGenerators;
 
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for webpage items.
 /// </summary>
-internal class WebPageCacheKeysGenerator
+internal class WebPageCacheKeysGenerator : ICacheKeysGenerator<WebPageEventArgs>
 {
     private readonly ILogger<WebPageCacheKeysGenerator> logger;
 

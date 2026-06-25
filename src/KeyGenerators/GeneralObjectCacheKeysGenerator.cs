@@ -1,14 +1,17 @@
 ﻿using CMS.DataEngine;
 using CMS.Helpers;
+using CMS.Helpers.Internal;
 
 using Microsoft.Extensions.Logging;
+
+using XperienceCommunity.FusionCache.KeyGenerators;
 
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for general object items.
 /// </summary>
-internal class GeneralObjectCacheKeysGenerator
+internal class GeneralObjectCacheKeysGenerator : ICacheKeysGenerator<GeneralizedInfo>
 {
     private readonly ILogger<GeneralObjectCacheKeysGenerator> logger;
 

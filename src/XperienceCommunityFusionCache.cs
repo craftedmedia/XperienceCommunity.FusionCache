@@ -3,14 +3,20 @@ using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 using StackExchange.Redis;
 
 using XperienceCommunity.FusionCache.Caching.KeyGenerators;
 using XperienceCommunity.FusionCache.Caching.OutputCache;
 using XperienceCommunity.FusionCache.Caching.Services;
+using XperienceCommunity.FusionCache.EventHooks.ContentItem;
+using XperienceCommunity.FusionCache.EventHooks.General;
+using XperienceCommunity.FusionCache.EventHooks.Headless;
+using XperienceCommunity.FusionCache.EventHooks.Media;
+using XperienceCommunity.FusionCache.EventHooks.Settings;
+using XperienceCommunity.FusionCache.EventHooks.WebPage;
 using XperienceCommunity.FusionCache.Services;
-using XperienceCommunity.FusionCache.Utilities;
 
 using ZiggyCreatures.Caching.Fusion;
 using ZiggyCreatures.Caching.Fusion.Backplane.StackExchangeRedis;
@@ -31,18 +37,115 @@ namespace XperienceCommunity.FusionCache;
 public static class XperienceCommunityFusionCache
 {
     /// <summary>
-    /// Adds Xperience fusion cache services.
+    /// Adds Xperience fusion cache services using the Redis connection string configured in the
+    /// 'XperienceFusionCache' configuration section.
     /// </summary>
     /// <param name="services">Instance of <see cref="IServiceCollection"/>.</param>
     /// <param name="configuration">Instance of <see cref="IConfiguration"/>.</param>
     /// <returns><see cref="IServiceCollection"/>.</returns>
-    public static IServiceCollection AddXperienceFusionCache(this IServiceCollection services, IConfiguration configuration)
-    {
-        var options = configuration.GetSection("XperienceFusionCache").Get<XperienceCommunityFusionCacheOptions>() ?? throw new ArgumentNullException("XperienceFusionCache", "No appsettings section found matching expected 'XperienceFusionCache' section.");
+    public static IServiceCollection AddXperienceFusionCache(
+        this IServiceCollection services,
+        IConfiguration configuration) => AddXperienceFusionCacheInternal(
+            services,
+            configuration,
+            redisConnectionMultiplexerFactory: null);
 
-        if (string.IsNullOrEmpty(options.RedisConnectionString))
+    /// <summary>
+    /// Adds Xperience fusion cache services using a provided Redis connection multiplexer.
+    /// </summary>
+    /// <param name="services">Instance of <see cref="IServiceCollection"/>.</param>
+    /// <param name="configuration">Instance of <see cref="IConfiguration"/>.</param>
+    /// <param name="redisConnectionMultiplexer">Redis connection multiplexer to use for the distributed cache, backplane, and distributed locker.</param>
+    /// <returns><see cref="IServiceCollection"/>.</returns>
+    public static IServiceCollection AddXperienceFusionCache(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        IConnectionMultiplexer redisConnectionMultiplexer)
+    {
+        ArgumentNullException.ThrowIfNull(redisConnectionMultiplexer);
+
+        services.TryAddSingleton(redisConnectionMultiplexer);
+
+        return AddXperienceFusionCacheInternal(
+            services,
+            configuration,
+            serviceProvider => Task.FromResult(serviceProvider.GetRequiredService<IConnectionMultiplexer>()));
+    }
+
+    /// <summary>
+    /// Adds Xperience fusion cache services using a factory that provides a Redis connection multiplexer.
+    /// </summary>
+    /// <param name="services">Instance of <see cref="IServiceCollection"/>.</param>
+    /// <param name="configuration">Instance of <see cref="IConfiguration"/>.</param>
+    /// <param name="redisConnectionMultiplexerFactory">Factory used to resolve the Redis connection multiplexer. The returned multiplexer is shared and reused.</param>
+    /// <returns><see cref="IServiceCollection"/>.</returns>
+    public static IServiceCollection AddXperienceFusionCache(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Func<IServiceProvider, IConnectionMultiplexer> redisConnectionMultiplexerFactory)
+    {
+        ArgumentNullException.ThrowIfNull(redisConnectionMultiplexerFactory);
+
+        services.TryAddSingleton(redisConnectionMultiplexerFactory);
+
+        return AddXperienceFusionCacheInternal(
+            services,
+            configuration,
+            serviceProvider => Task.FromResult(serviceProvider.GetRequiredService<IConnectionMultiplexer>()));
+    }
+
+    /// <summary>
+    /// Adds Xperience fusion cache services using an async factory that provides a Redis connection multiplexer.
+    /// </summary>
+    /// <param name="services">Instance of <see cref="IServiceCollection"/>.</param>
+    /// <param name="configuration">Instance of <see cref="IConfiguration"/>.</param>
+    /// <param name="redisConnectionMultiplexerFactory">Async factory used to resolve the Redis connection multiplexer. The returned multiplexer is shared and reused.</param>
+    /// <returns><see cref="IServiceCollection"/>.</returns>
+    public static IServiceCollection AddXperienceFusionCache(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Func<IServiceProvider, Task<IConnectionMultiplexer>> redisConnectionMultiplexerFactory)
+    {
+        ArgumentNullException.ThrowIfNull(redisConnectionMultiplexerFactory);
+
+        return AddXperienceFusionCacheInternal(
+            services,
+            configuration,
+            redisConnectionMultiplexerFactory);
+    }
+
+    /// <summary>
+    /// Uses Xperience fusion cache.
+    /// </summary>
+    /// <param name="app"><see cref="IApplicationBuilder"/> instance.</param>
+    /// <returns><see cref="IApplicationBuilder"/>.</returns>
+    public static IApplicationBuilder UseXperienceFusionCache(this IApplicationBuilder app)
+    {
+        app.UseOutputCache();
+
+        return app;
+    }
+
+    private static IServiceCollection AddXperienceFusionCacheInternal(
+        IServiceCollection services,
+        IConfiguration configuration,
+        Func<IServiceProvider, Task<IConnectionMultiplexer>>? redisConnectionMultiplexerFactory)
+    {
+        var options = configuration.GetSection("XperienceFusionCache").Get<XperienceCommunityFusionCacheOptions>()
+            ?? throw new ArgumentNullException(
+                "XperienceFusionCache",
+                "No appsettings section found matching expected 'XperienceFusionCache' section.");
+
+        bool hasRedisConnectionString = !string.IsNullOrWhiteSpace(options.RedisConnectionString);
+        bool hasProvidedConnectionMultiplexerFactory = redisConnectionMultiplexerFactory is not null;
+
+        if (!options.DevMode && !hasRedisConnectionString && !hasProvidedConnectionMultiplexerFactory)
         {
-            throw new ArgumentNullException(nameof(XperienceCommunityFusionCacheOptions.RedisConnectionString), "A redis connection string has not been set. Please configure one within the 'XperienceFusionCache' settings section.");
+            throw new ArgumentNullException(
+                nameof(XperienceCommunityFusionCacheOptions.RedisConnectionString),
+                "A redis connection string or connection multiplexer factory has not been set. " +
+                "Please configure RedisConnectionString within the 'XperienceFusionCache' settings section, " +
+                "or use an AddXperienceFusionCache overload that provides an IConnectionMultiplexer.");
         }
 
         options.DefaultFusionCacheEntryOptions ??= new FusionCacheEntryOptions
@@ -50,7 +153,7 @@ public static class XperienceCommunityFusionCache
             // Set some sensible default cache durations.
             Duration = TimeSpan.FromMinutes(10),
 
-            // Normally operations on the distributed cache are executed in a blocking fashion: setting this flag to true let them run in the background in a kind of fire-and-forget way.
+            // Normally operations on the distributed cache are executed in a blocking fashion: setting this flag to true lets them run in the background in a kind of fire-and-forget way.
             // This will give a perf boost, but watch out for rare side effects.
             AllowBackgroundDistributedCacheOperations = true,
 
@@ -61,66 +164,39 @@ public static class XperienceCommunityFusionCache
         // This will be our primary L1 cache.
         services.AddMemoryCache();
 
+        var fusionCacheBuilder = services
+            .AddFusionCache()
+            .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
+            .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
+            .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer));
+
         if (options.DevMode)
         {
             // Use isolated in-memory cache when in dev mode.
-            services.AddFusionCache()
-                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
-                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer));
         }
-        else if (options.UseConnectionMultiplexer)
+        else if (hasProvidedConnectionMultiplexerFactory)
         {
-            // Configure fusion cache with connection multiplexer.
-            services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(options.RedisConnectionString));
-            services.AddFusionCache()
-                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
-                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
-                    .WithDistributedCache(sp =>
-                    {
-                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
-
-                        return new RedisCache(new RedisCacheOptions
-                        {
-                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
-                        });
-                    })
-                    .WithBackplane(sp =>
-                    {
-                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
-
-                        return new RedisBackplane(new RedisBackplaneOptions
-                        {
-                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
-                        });
-                    })
-                    .WithDistributedLocker(sp =>
-                    {
-                        var multiplexer = sp.GetRequiredService<IConnectionMultiplexer>();
-
-                        return new RedisDistributedLocker(new RedisDistributedLockerOptions
-                        {
-                            ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer)
-                        });
-                    });
+            // Use the caller-provided connection multiplexer/factory.
+            ConfigureRedisUsingConnectionMultiplexerFactory(
+                fusionCacheBuilder,
+                redisConnectionMultiplexerFactory!);
         }
         else
         {
-            // Configure fusion cache by connection string.
-            services.AddFusionCache()
-                    .WithOptions(fusionCacheOptions => fusionCacheOptions.RemoveByTagBehavior = RemoveByTagBehavior.Remove)
-                    .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
-                    .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer))
-                    .WithDistributedCache(new RedisCache(new RedisCacheOptions { Configuration = options.RedisConnectionString }))
-                    .WithBackplane(new RedisBackplane(new RedisBackplaneOptions { Configuration = options.RedisConnectionString }))
-                    .WithDistributedLocker(new RedisDistributedLocker(new RedisDistributedLockerOptions { Configuration = options.RedisConnectionString }));
+            // Register a shared app-level Redis connection multiplexer from the configured connection string.
+            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                ConnectionMultiplexer.Connect(options.RedisConnectionString!));
+
+            ConfigureRedis(
+                fusionCacheBuilder,
+                serviceProvider => Task.FromResult(
+                    serviceProvider.GetRequiredService<IConnectionMultiplexer>()));
         }
 
-        // Register our fusion cache tag helper service
+        // Register our fusion cache tag helper service.
         services.AddSingleton<FusionCacheTagHelperService>();
 
-        // Register our object cache key generators
+        // Register our object cache key generators.
         services.AddSingleton<WebPageCacheKeysGenerator>();
         services.AddSingleton<ContentItemCacheKeysGenerator>();
         services.AddSingleton<HeadlessItemsCacheKeysGenerator>();
@@ -130,25 +206,74 @@ public static class XperienceCommunityFusionCache
         services.AddSingleton<DummyCacheKeysService>();
         services.AddScoped<CacheVaryByOptionService>();
 
-        // Register custom fusion cache output cache store and policy
+        // Register our invalidators.
+        services.AddSingleton<GeneralObjectCacheInvalidator>();
+        services.AddSingleton<ContentItemCacheInvalidator>();
+        services.AddSingleton<MediaFileCacheInvalidator>();
+        services.AddSingleton<SettingsKeyCacheInvalidator>();
+        services.AddSingleton<WebPageCacheInvalidator>();
+        services.AddSingleton<HeadlessItemCacheInvalidator>();
+
+        // Register custom fusion cache output cache store and policy.
         services.AddSingleton<IOutputCacheStore, XperienceCommunityFusionCacheOutputCacheStore>();
-        services.AddOutputCache(x => x.AddPolicy(options.OutputCachePolicyName, builder => builder.AddPolicy<XperienceCommunityFusionCacheOutputCachePolicy>().Expire(options.OutputCacheExpiration), true));
+        services.AddOutputCache(x => x.AddPolicy(
+            options.OutputCachePolicyName,
+            builder => builder
+                .AddPolicy<XperienceCommunityFusionCacheOutputCachePolicy>()
+                .Expire(options.OutputCacheExpiration),
+            true));
 
         return services;
     }
 
-    /// <summary>
-    /// Uses Xperience fusion cache.
-    /// </summary>
-    /// <param name="app"><see cref="IApplicationBuilder"/> instance.</param>
-    /// <returns><see cref="IApplicationBuilder"/>.</returns>
-    public static IApplicationBuilder UseXperienceFusionCache(this IApplicationBuilder app)
+    private static void ConfigureRedisUsingConnectionMultiplexerFactory(
+        IFusionCacheBuilder fusionCacheBuilder,
+        Func<IServiceProvider, Task<IConnectionMultiplexer>> redisConnectionMultiplexerFactory)
     {
-        ServiceContainer.Instance = app.ApplicationServices;
+        var sharedConnectionMultiplexerFactory =
+            CreateSharedConnectionMultiplexerFactory(redisConnectionMultiplexerFactory);
 
-        app.UseOutputCache();
+        ConfigureRedis(
+            fusionCacheBuilder,
+            sharedConnectionMultiplexerFactory);
+    }
 
-        return app;
+    private static void ConfigureRedis(
+        IFusionCacheBuilder fusionCacheBuilder,
+        Func<IServiceProvider, Task<IConnectionMultiplexer>> redisConnectionMultiplexerFactory) => fusionCacheBuilder
+            .WithDistributedCache(serviceProvider => new RedisCache(new RedisCacheOptions
+            {
+                ConnectionMultiplexerFactory = () => redisConnectionMultiplexerFactory(serviceProvider)
+            }))
+            .WithBackplane(serviceProvider => new RedisBackplane(new RedisBackplaneOptions
+            {
+                ConnectionMultiplexerFactory = () => redisConnectionMultiplexerFactory(serviceProvider)
+            }))
+            .WithDistributedLocker(serviceProvider => new RedisDistributedLocker(new RedisDistributedLockerOptions
+            {
+                ConnectionMultiplexerFactory = () => redisConnectionMultiplexerFactory(serviceProvider)
+            }));
+
+    private static Func<IServiceProvider, Task<IConnectionMultiplexer>> CreateSharedConnectionMultiplexerFactory(
+        Func<IServiceProvider, Task<IConnectionMultiplexer>> redisConnectionMultiplexerFactory)
+    {
+        Task<IConnectionMultiplexer>? connectionMultiplexer = null;
+        object gate = new();
+
+        return serviceProvider =>
+        {
+            lock (gate)
+            {
+                if (connectionMultiplexer is null ||
+                    connectionMultiplexer.IsFaulted ||
+                    connectionMultiplexer.IsCanceled)
+                {
+                    connectionMultiplexer = redisConnectionMultiplexerFactory(serviceProvider);
+                }
+
+                return connectionMultiplexer;
+            }
+        };
     }
 
     private static IFusionCacheSerializer GetConfiguredSerializer(string serializer) => serializer switch

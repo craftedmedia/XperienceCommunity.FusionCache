@@ -1,6 +1,6 @@
 ﻿using CMS.Websites;
 
-namespace XperienceCommunity.FusionCache.Caching.EventHooks;
+namespace XperienceCommunity.FusionCache.EventHooks.WebPage;
 
 /// <summary>
 /// Generalized web page event args.
@@ -11,7 +11,7 @@ internal class WebPageEventArgs
     /// Initializes a new instance of the <see cref="WebPageEventArgs"/> class.
     /// </summary>
     /// <param name="args">Instance of <see cref="WebPageEventArgsBase"/>.</param>
-    public WebPageEventArgs(WebPageEventArgsBase args)
+    public WebPageEventArgs(IWebPageEventArgs args)
     {
         ID = args.ID;
         ParentID = args.ParentID;
@@ -25,7 +25,7 @@ internal class WebPageEventArgs
         ContentTypeName = args.ContentTypeName;
         ContentLanguageID = args.ContentLanguageID;
         ContentLanguageName = args.ContentLanguageName;
-        IsSecured = args.IsSecured;
+        IsSecured = args.AccessSettings.IsSecured;
         DisplayName = args.DisplayName;
     }
 
@@ -33,7 +33,7 @@ internal class WebPageEventArgs
     /// Initializes a new instance of the <see cref="WebPageEventArgs"/> class.
     /// </summary>
     /// <param name="args">Instance of <see cref="CreateWebPageEventArgs"/>.</param>
-    public WebPageEventArgs(CreateWebPageEventArgs args)
+    public WebPageEventArgs(CreateWebPageEventData args)
     {
         ID = args.ID ?? -1;
         ParentID = args.ParentID;
@@ -47,7 +47,7 @@ internal class WebPageEventArgs
         ContentTypeName = args.ContentTypeName;
         ContentLanguageID = args.ContentLanguageID;
         ContentLanguageName = args.ContentLanguageName;
-        IsSecured = args.IsSecured;
+        IsSecured = args.AccessSettings.IsSecured;
         DisplayName = args.DisplayName;
     }
 

@@ -2,12 +2,14 @@
 
 using Microsoft.Extensions.Logging;
 
+using XperienceCommunity.FusionCache.KeyGenerators;
+
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for media file items.
 /// </summary>
-internal class MediaFileCacheKeysGenerator
+internal class MediaFileCacheKeysGenerator : ICacheKeysGenerator<Guid>
 {
     private readonly ILogger<MediaFileCacheKeysGenerator> logger;
 

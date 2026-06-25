@@ -50,4 +50,36 @@ internal sealed class DummyCacheKeysService
             }
         }
     }
+
+    /// <summary>
+    /// Removes FusionCache entries tagged with the supplied dummy cache keys.
+    /// </summary>
+    /// <param name="keys">Collection of dummy cache keys used as FusionCache tags.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task TouchDummyKeysAsync(IEnumerable<string>? keys, CancellationToken cancellationToken)
+    {
+        if (keys is null)
+        {
+            return;
+        }
+
+        foreach (string key in keys
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                logger.LogDebug("Removing FusionCache entries by tag: {Tag}", key);
+
+                await fusionCache.RemoveByTagAsync(key, token: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to remove FusionCache entries by tag: {Tag}",
+                    key);
+            }
+        }
+    }
 }
