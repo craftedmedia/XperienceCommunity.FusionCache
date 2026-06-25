@@ -22,7 +22,7 @@ If you're unfamiliar with hybrid caching, read the [gentle introduction to Fusio
 
 | Xperience Version | Library Version |
 | ----------------- | --------------- |
-| 31.5.0+           | 2.x             |
+| 31.5.4+           | 2.x             |
 | 30.x              | 1.x             |
 
 Version 2.x contains breaking changes and requires Xperience by Kentico 31.0.0 or later. Projects using Xperience 30.x should use the latest 1.x version.
