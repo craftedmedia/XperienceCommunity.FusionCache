@@ -1,15 +1,17 @@
-﻿using CMS.Helpers;
-
-using XperienceCommunity.FusionCache.Caching.EventHooks;
+﻿using CMS.DataEngine;
+using CMS.Helpers;
 
 using Microsoft.Extensions.Logging;
+
+using XperienceCommunity.FusionCache.EventHooks.ContentItem;
+using XperienceCommunity.FusionCache.KeyGenerators;
 
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for content items.
 /// </summary>
-internal class ContentItemCacheKeysGenerator
+internal class ContentItemCacheKeysGenerator : ICacheKeysGenerator<ContentItemEventArgs>
 {
     private readonly ILogger<ContentItemCacheKeysGenerator> logger;
 

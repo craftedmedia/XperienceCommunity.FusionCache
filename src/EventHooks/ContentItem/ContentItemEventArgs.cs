@@ -1,6 +1,6 @@
 ﻿using CMS.ContentEngine;
 
-namespace XperienceCommunity.FusionCache.Caching.EventHooks;
+namespace XperienceCommunity.FusionCache.EventHooks.ContentItem;
 
 /// <summary>
 /// Generalized content item event args.
@@ -10,13 +10,13 @@ internal class ContentItemEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentItemEventArgs"/> class.
     /// </summary>
-    /// <param name="args">Instance of <see cref="ContentItemEventArgsBase"/>.</param>
-    public ContentItemEventArgs(ContentItemEventArgsBase args)
+    /// <param name="args">Instance of <see cref="IContentItemEventArgs"/>.</param>
+    public ContentItemEventArgs(IContentItemEventArgs args)
     {
         ID = args.ID;
         Name = args.Name;
         Guid = args.Guid;
-        IsSecured = args.IsSecured;
+        IsSecured = args.AccessSettings.IsSecured;
         ContentTypeID = args.ContentTypeID;
         ContentTypeName = args.ContentTypeName;
         ContentLanguageID = args.ContentLanguageID;
@@ -27,13 +27,13 @@ internal class ContentItemEventArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="ContentItemEventArgs"/> class.
     /// </summary>
-    /// <param name="args">Instance of <see cref="CreateContentItemEventArgs"/>.</param>
-    public ContentItemEventArgs(CreateContentItemEventArgs args)
+    /// <param name="args">Instance of <see cref="IContentItemEventArgs"/>.</param>
+    public ContentItemEventArgs(CreateContentItemEventData args)
     {
         ID = args.ID ?? -1;
         Name = args.Name;
-        Guid = args.GUID ?? Guid.Empty;
-        IsSecured = args.IsSecured;
+        Guid = args.Guid ?? Guid.Empty;
+        IsSecured = args.AccessSettings.IsSecured;
         ContentTypeID = args.ContentTypeID;
         ContentTypeName = args.ContentTypeName;
         ContentLanguageID = args.ContentLanguageID;

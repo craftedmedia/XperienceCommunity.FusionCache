@@ -1,14 +1,16 @@
-﻿using CMS.Headless;
-using CMS.Helpers;
+﻿using CMS.Helpers;
 
 using Microsoft.Extensions.Logging;
+
+using XperienceCommunity.FusionCache.EventHooks.Headless;
+using XperienceCommunity.FusionCache.KeyGenerators;
 
 namespace XperienceCommunity.FusionCache.Caching.KeyGenerators;
 
 /// <summary>
 /// Generates dummy cache keys for published headless items.
 /// </summary>
-internal class HeadlessItemsCacheKeysGenerator
+internal class HeadlessItemsCacheKeysGenerator : ICacheKeysGenerator<HeadlessItemEventArgs>
 {
     private readonly ILogger<HeadlessItemsCacheKeysGenerator> logger;
 
@@ -21,13 +23,13 @@ internal class HeadlessItemsCacheKeysGenerator
     /// <summary>
     /// Generates dummy keys for a given headless item.
     /// </summary>
-    /// <param name="publishedHeadlessItemArgs">Published headless item event args.</param>
+    /// <param name="headlessItemEventArgs">Published headless item event args.</param>
     /// <returns>Dummy cache keys.</returns>
-    public IEnumerable<string> GetDummyKeys(PublishHeadlessItemEventArgs publishedHeadlessItemArgs)
+    public IEnumerable<string> GetDummyKeys(HeadlessItemEventArgs headlessItemEventArgs)
     {
-        if (publishedHeadlessItemArgs is null)
+        if (headlessItemEventArgs is null)
         {
-            logger.LogError("Failed to generate dummy keys for headless item. '{paramName}' was null.", nameof(publishedHeadlessItemArgs));
+            logger.LogError("Failed to generate dummy keys for headless item. '{paramName}' was null.", nameof(headlessItemEventArgs));
 
             return Enumerable.Empty<string>();
         }
@@ -35,21 +37,21 @@ internal class HeadlessItemsCacheKeysGenerator
         var set = new HashSet<string>();
 
         // Generate all states set of keys
-        set.UnionWith(GetDummyKeys(publishedHeadlessItemArgs, lang: null, allStates: true, includeAllKey: true));
+        set.UnionWith(GetDummyKeys(headlessItemEventArgs, lang: null, allStates: true, includeAllKey: true));
 
         // Generate non-all states set of keys
-        set.UnionWith(GetDummyKeys(publishedHeadlessItemArgs, lang: null, allStates: false, includeAllKey: true));
+        set.UnionWith(GetDummyKeys(headlessItemEventArgs, lang: null, allStates: false, includeAllKey: true));
 
         // Generate per language keys - for all states
-        set.UnionWith(GetDummyKeys(publishedHeadlessItemArgs, lang: publishedHeadlessItemArgs.ContentLanguageName, allStates: true, includeAllKey: false));
+        set.UnionWith(GetDummyKeys(headlessItemEventArgs, lang: headlessItemEventArgs.ContentLanguageName, allStates: true, includeAllKey: false));
 
         // Generate per language keys - non-all states
-        set.UnionWith(GetDummyKeys(publishedHeadlessItemArgs, lang: publishedHeadlessItemArgs.ContentLanguageName, allStates: false, includeAllKey: false));
+        set.UnionWith(GetDummyKeys(headlessItemEventArgs, lang: headlessItemEventArgs.ContentLanguageName, allStates: false, includeAllKey: false));
 
         return set;
     }
 
-    private static ISet<string> GetDummyKeys(PublishHeadlessItemEventArgs publishedHeadlessItemArgs, string? lang, bool allStates, bool includeAllKey)
+    private static ISet<string> GetDummyKeys(HeadlessItemEventArgs headlessItemEventArgs, string? lang, bool allStates, bool includeAllKey)
     {
         var keys = new HashSet<string>()
         {
@@ -60,7 +62,7 @@ internal class HeadlessItemsCacheKeysGenerator
                         "headlessitem",
                         allStates ? "allstates" : null!,
                         "byid",
-                        publishedHeadlessItemArgs.ID.ToString(),
+                        headlessItemEventArgs.ID.ToString(),
                         lang!,
                     }),
 
@@ -71,7 +73,7 @@ internal class HeadlessItemsCacheKeysGenerator
                         "headlessitem",
                         allStates ? "allstates" : null!,
                         "byname",
-                        publishedHeadlessItemArgs.Name,
+                        headlessItemEventArgs.Name,
                         lang!,
                     }),
 
@@ -82,7 +84,7 @@ internal class HeadlessItemsCacheKeysGenerator
                         "headlessitem",
                         allStates ? "allstates" : null!,
                         "byguid",
-                        publishedHeadlessItemArgs.Guid.ToString(),
+                        headlessItemEventArgs.Guid.ToString(),
                         lang!,
                     }),
 
@@ -93,9 +95,9 @@ internal class HeadlessItemsCacheKeysGenerator
                         "headlessitem",
                         allStates ? "allstates" : null!,
                         "bychannel",
-                        publishedHeadlessItemArgs.HeadlessChannelName,
+                        headlessItemEventArgs.HeadlessChannelName,
                         "bycontenttype",
-                        publishedHeadlessItemArgs.ContentTypeName,
+                        headlessItemEventArgs.ContentTypeName,
                         lang!,
                     }),
         };
@@ -118,7 +120,7 @@ internal class HeadlessItemsCacheKeysGenerator
                             "headlessitem",
                             allStates ? "allstates" : null!,
                             "bychannel",
-                            publishedHeadlessItemArgs.HeadlessChannelName,
+                            headlessItemEventArgs.HeadlessChannelName,
                             "all",
                         }));
         }

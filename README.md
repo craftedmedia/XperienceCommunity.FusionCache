@@ -1,54 +1,67 @@
 # XperienceCommunity.FusionCache
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Description
-This package integrates with the popular Hybrid Caching library known as [ZiggyCreatures.FusionCache](https://github.com/ZiggyCreatures/FusionCache) providing a true L1 + L2 layered caching solution within Xperience by Kentico.
+## Overview
 
-It provides some useful utilities such as cache invalidation via Kentico cache dependencies, custom `FusionCache` backed cache tag helper and support for output caching, with content personalization handled out of the box.
+`XperienceCommunity.FusionCache` integrates [ZiggyCreatures.FusionCache](https://github.com/ZiggyCreatures/FusionCache) with Xperience by Kentico, providing a true L1 + L2 layered caching solution.
 
-If you're unfamiliar with Hybrid Caching, I would recommend reading the gentle intro over at: https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/AGentleIntroduction.md
+The package includes:
 
-### Library Version Matrix
+- Cache invalidation via Kentico cache dependency keys
+- A custom `FusionCache` backed cache tag helper
+- ASP.NET Core Output Caching support
+- Content personalization support
+- Redis-backed L2 cache support
+
+If you're unfamiliar with hybrid caching, read the [gentle introduction to FusionCache](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/AGentleIntroduction.md).
+
+## Compatibility
+
+### Library version matrix
 
 | Xperience Version | Library Version |
 | ----------------- | --------------- |
-| >= 30.0.0         | 1.0.0           |
+| 31.5.4+           | 2.x             |
+| 30.x              | 1.x             |
 
-### Dependencies
+Version 2.x contains breaking changes and requires Xperience by Kentico 31.0.0 or later. Projects using Xperience 30.x should use the latest 1.x version.
+
+## Requirements
 
 - [ASP.NET Core 8.0](https://dotnet.microsoft.com/en-us/download)
 - [Xperience by Kentico](https://docs.kentico.com)
+- A Redis instance to use as your L2 cache
 
-### Other requirements
+## Installation
 
-A Redis instance to use as your L2 cache.
+Install the `XperienceCommunity.FusionCache` package via NuGet or run:
 
-### Package Installation
-
-Install the `XperienceCommunity.FusionCache` package via nuget or run:
-
-```
+```powershell
 Install-Package XperienceCommunity.FusionCache
 ```
-From package manager console.
 
-## Quick Start
+from the Package Manager Console.
 
-### Configuration
+## Quick start
 
-Include the following section within your `appsettings.json` file:
+### 1. Configure `appsettings.json`
 
+Add the following section to your `appsettings.json` file:
+
+```json
+{
+  "XperienceFusionCache": {
+    "RedisConnectionString": "REDIS CONNECTION STRING GOES HERE"
+  }
+}
 ```
- "XperienceFusionCache": {
-   "RedisConnectionString": "REDIS CONNECTION STRING GOES HERE"
- }
-```
 
-### Register services
+### 2. Register services
 
 Add the following code to your `Program.cs` file:
 
-```
+```csharp
 var builder = WebApplication.CreateBuilder(args);
 
 // ...
@@ -56,78 +69,210 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddXperienceFusionCache(builder.Configuration);
 ```
 
-And include `UseXperienceFusionCache()` before `app.Run()`:
+This uses the `RedisConnectionString` configured in `appsettings.json`. The package registers a singleton `IConnectionMultiplexer` if one has not already been registered, then reuses that multiplexer for the FusionCache distributed cache, backplane, and distributed locker.
 
-```
+The registered `IConnectionMultiplexer` can also be injected and reused by your application.
+
+### 3. Add middleware
+
+Include `UseXperienceFusionCache()` before `app.Run()`:
+
+```csharp
 app.UseXperienceFusionCache();
 ```
 
-### Update _ViewImports.cshtml
+### 4. Register tag helpers
 
 Include the following in your `_ViewImports.cshtml` file:
 
-```
+```html
 @addTagHelper *, XperienceCommunity.FusionCache
 ```
 
-### Output caching
+### 5. Start caching
 
-Use either:
+Use the `FusionCache` tag helper:
 
-- Tag helper
-    - `<xperience-fusion-cache />`
-- Output cache policy
-    - `[OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]`
+```html
+<xperience-fusion-cache
+    name="home-page-cache"
+    cache-dependencies="@(new string[] { "webpageitem|all" })"
+    duration="@TimeSpan.FromMinutes(5)">
 
-### Services
+    @* Cached HTML goes here *@
 
-Inject `IFusionCache` and use the Get/Set methods, providing `tags` as Kentico cache dependency keys:
-
-```
-var products = await this.fusionCache.GetOrSetAsync<IEnumerable<ProductDTO>?>(
-            key: "FooWebsite.Products",
-            factory: async (ctx, _) =>
-            {
-                var products = await this.GetproductsAsync();
-
-                if (products is null)
-                {
-                    ctx.Options.Duration = TimeSpan.Zero;
-                    return null;
-                }
-
-                return products;
-            },
-            tags: [CacheHelper.BuildCacheItemName(new[] { ProductItem.CONTENT_TYPE_NAME, "all" })]);
+</xperience-fusion-cache>
 ```
 
+Or inject `IFusionCache` and provide Kentico cache dependency keys as tags:
 
-And that should be enough to get going! Read on for more info.
+```csharp
+public class ProductService
+{
+    private readonly IFusionCache fusionCache;
 
-## Full Instructions
+    public ProductService(IFusionCache fusionCache) =>
+        this.fusionCache = fusionCache;
 
-### Default Cache options
-
-You can choose to configure some default `FusionCacheEntryOptions` via `appsettings.json` config. These will be used as the default for all cache entries, although they can be overridden on a per-call basis when using `IFusionCache`. See: [https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/Options.md](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/Options.md#defaultentryoptions)
-
-Example:
-
+    public async Task<IEnumerable<ProductDTO>> GetProductsAsync()
+    {
+        return await fusionCache.GetOrSetAsync(
+            key: "Products.All",
+            factory: async (_, _) => await GetProductsFromSourceAsync(),
+            tags:
+            [
+                CacheHelper.BuildCacheItemName(new[] { ProductItem.CONTENT_TYPE_NAME, "all" })
+            ]);
+    }
+}
 ```
-"XperienceFusionCache": {
-  "DefaultFusionCacheEntryOptions": {
-    "Duration": "00:05:00", // 5 mins,
-    "DistributedCacheDuration": "00:10:00", // 10 mins,
-    "IsFailSafeEnabled": true,
-    "FailSafeMaxDuration": "02:00:00" // 2 hours
-    // Etc...
+
+Or use the output cache policy:
+
+```csharp
+[OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]
+```
+
+## Configuration
+
+Most package configuration is provided through the `XperienceFusionCache` section in `appsettings.json`. Redis connection configuration can be provided either through `appsettings.json` or by passing an `IConnectionMultiplexer` or factory when registering services.
+
+### Redis connection configuration
+
+Redis is required unless `DevMode` is enabled.
+
+The package supports two Redis connection approaches:
+
+1. Configure a Redis connection string in `appsettings.json`
+2. Provide an existing `IConnectionMultiplexer` or connection multiplexer factory when registering services
+
+#### Using `RedisConnectionString`
+
+The simplest setup is to configure a Redis connection string in the `XperienceFusionCache` section.
+
+```json
+{
+  "XperienceFusionCache": {
+    "RedisConnectionString": "REDIS CONNECTION STRING GOES HERE"
   }
 }
 ```
 
-Any option available on the [FusionCacheEntryOptions](https://github.com/ZiggyCreatures/FusionCache/blob/f3896a5f5b6e21f918009d687520938d322f79f4/src/ZiggyCreatures.FusionCache/FusionCacheEntryOptions.cs) is also available to be set here.
+Then register the package with:
 
-### Configuring Serialization
-[NewtonsoftJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson/) is configured as the default serializer for maximum compatibility and ease of use, however it's possible to configure any of the following serializers:
+```csharp
+builder.Services.AddXperienceFusionCache(builder.Configuration);
+```
+
+When using this approach, the package registers a singleton `IConnectionMultiplexer` if one has not already been registered.
+
+The resolved `IConnectionMultiplexer` is used by the FusionCache distributed cache, backplane, and distributed locker. It can also be injected and reused by your own application services.
+
+```csharp
+public class MyRedisService
+{
+    private readonly IConnectionMultiplexer redis;
+
+    public MyRedisService(IConnectionMultiplexer redis)
+    {
+        this.redis = redis;
+    }
+}
+```
+
+If your application has already registered an `IConnectionMultiplexer`, the package reuses that existing registration instead of creating another one from `RedisConnectionString`.
+
+#### Using a provided `IConnectionMultiplexer`
+
+If your application already creates and manages a Redis connection multiplexer, pass it to `AddXperienceFusionCache`.
+
+```csharp
+using StackExchange.Redis;
+
+var redisConnectionMultiplexer = await ConnectionMultiplexer.ConnectAsync(
+    builder.Configuration.GetConnectionString("Redis")!);
+
+builder.Services.AddXperienceFusionCache(
+    builder.Configuration,
+    redisConnectionMultiplexer);
+```
+
+When using this overload, the provided multiplexer is registered as the app-level singleton `IConnectionMultiplexer` if one has not already been registered. It is then shared by the FusionCache distributed cache, backplane, and distributed locker.
+
+The package does not create a multiplexer passed to this overload. The calling application should still treat it as an application-level shared Redis connection.
+
+#### Using a connection multiplexer factory
+
+You can also provide a factory function. This is useful when the multiplexer is already registered in dependency injection.
+
+```csharp
+using StackExchange.Redis;
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(_ =>
+    ConnectionMultiplexer.Connect(
+        builder.Configuration.GetConnectionString("Redis")!));
+
+builder.Services.AddXperienceFusionCache(
+    builder.Configuration,
+    serviceProvider => serviceProvider.GetRequiredService<IConnectionMultiplexer>());
+```
+
+An async factory overload is also available for applications that resolve the multiplexer asynchronously from their own connection provider.
+
+```csharp
+builder.Services.AddSingleton<IRedisConnectionMultiplexerProvider, RedisConnectionMultiplexerProvider>();
+
+builder.Services.AddXperienceFusionCache(
+    builder.Configuration,
+    serviceProvider => serviceProvider
+        .GetRequiredService<IRedisConnectionMultiplexerProvider>()
+        .GetConnectionMultiplexerAsync());
+```
+
+The factory result is shared and reused internally by the package. The factory is not called for every cache operation.
+
+Prefer returning a DI-managed singleton `IConnectionMultiplexer`, or otherwise ensure the returned multiplexer is managed as an application-level shared Redis connection.
+
+#### Choosing a Redis connection approach
+
+For most projects, configuring `RedisConnectionString` is sufficient.
+
+Use a provided `IConnectionMultiplexer` or factory when:
+
+- Your application already manages Redis connections
+- Multiple libraries in your application need to share the same Redis multiplexer
+- You need custom Redis connection setup that cannot be represented by the package configuration
+
+### FusionCache entry options
+
+#### `DefaultFusionCacheEntryOptions`
+
+You can configure default `FusionCacheEntryOptions` via `appsettings.json`. These are used as the default for all cache entries, although they can be overridden on a per-call basis when using `IFusionCache`.
+
+See the FusionCache documentation for [default entry options](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/Options.md#defaultentryoptions).
+
+```json
+{
+  "XperienceFusionCache": {
+    "DefaultFusionCacheEntryOptions": {
+      "Duration": "00:05:00",
+      "DistributedCacheDuration": "00:10:00",
+      "IsFailSafeEnabled": true,
+      "FailSafeMaxDuration": "02:00:00"
+    }
+  }
+}
+```
+
+Any option available on `FusionCacheEntryOptions` is also available to be set here. See the [FusionCacheEntryOptions source](https://github.com/ZiggyCreatures/FusionCache/blob/f3896a5f5b6e21f918009d687520938d322f79f4/src/ZiggyCreatures.FusionCache/FusionCacheEntryOptions.cs).
+
+### Serialization options
+
+#### `DefaultSerializer`
+
+[NewtonsoftJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.NewtonsoftJson/) is configured as the default serializer for maximum compatibility and ease of use.
+
+You can configure any of the following serializers:
 
 - [SystemTextJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.SystemTextJson)
 - [CysharpMemoryPack](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.CysharpMemoryPack)
@@ -135,78 +280,142 @@ Any option available on the [FusionCacheEntryOptions](https://github.com/ZiggyCr
 - [ServiceStackJson](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.ServiceStackJson)
 - [ProtoBufNet](https://www.nuget.org/packages/ZiggyCreatures.FusionCache.Serialization.ProtoBufNet)
 
-See https://github.com/ZiggyCreatures/FusionCache/pull/349 for performance benchmarks for each of these serializers.
+See the [FusionCache serializer performance benchmarks](https://github.com/ZiggyCreatures/FusionCache/pull/349) for more information.
 
-To configure a different serializer, simply specify the `DefaultSerializer` in options:
-```
-"XperienceFusionCache": {
-  "RedisConnectionString": "...",
-  "DefaultSerializer": "NeueccMessagePack" // OR 'ServiceStackJson' etc...
-},
-```
-`FusionCache` will now use the configured serializer instead of the default. Each serializer has its pros, cons and individual quirks you should familiarize yourself with before using.
+To configure a different serializer, specify the `DefaultSerializer` option:
 
-### Development Mode	
-The library has a development mode setting which will skip read/writes to the L2 cache for ease of local development.
-
-To enable development mode, add the `DevMode` property to `appsettings.json`:
-```
-"XperienceFusionCache": {
-  //...
-  "DevMode": true
-},
+```json
+{
+  "XperienceFusionCache": {
+    "RedisConnectionString": "...",
+    "DefaultSerializer": "NeueccMessagePack"
+  }
+}
 ```
 
+`FusionCache` will now use the configured serializer instead of the default. Each serializer has its own benefits, trade-offs, and quirks you should familiarize yourself with before using.
 
+### Event handling options
 
-### Fusion Cache Tag Helper
+#### `RegisterEventHandlersOnlyInAdmin`
+
+Controls whether cache invalidation event handlers are only active in the administration application.
+
+```json
+{
+  "XperienceFusionCache": {
+    "RegisterEventHandlersOnlyInAdmin": false
+  }
+}
+```
+
+The default value is `false`.
+
+When enabled, event handlers only run in the admin application. This can reduce duplicate Redis calls and FusionCache backplane operations in separated admin/live-site environments.
+
+Only enable this if your project performs relevant content and object changes exclusively through the admin application. Leave it disabled if changes may happen from the live site, scheduled tasks, integrations, imports, or background services.
+
+### Development mode
+
+#### `DevMode`
+
+The library has a development mode setting which skips reads and writes to the L2 cache for easier local development.
+
+```json
+{
+  "XperienceFusionCache": {
+    "DevMode": true
+  }
+}
+```
+
+### Output cache options
+
+#### `OutputCachePolicyName`
+
+Controls the name of the output cache policy registered by the package.
+
+#### `OutputCacheExpiration`
+
+Controls the default expiration used by the output cache policy.
+
+```json
+{
+  "XperienceFusionCache": {
+    "OutputCachePolicyName": "MyOutputCachePolicy",
+    "OutputCacheExpiration": "00:05:00"
+  }
+}
+```
+
+## Usage
+
+### Using `IFusionCache`
+
+Inject `IFusionCache` and use the Get/Set methods, providing `tags` as Kentico cache dependency keys:
+
+```csharp
+var products = await this.fusionCache.GetOrSetAsync<IEnumerable<ProductDTO>?>(
+    key: "FooWebsite.Products",
+    factory: async (ctx, _) =>
+    {
+        var products = await this.GetProductsAsync();
+
+        if (products is null)
+        {
+            ctx.Options.Duration = TimeSpan.Zero;
+            return null;
+        }
+
+        return products;
+    },
+    tags:
+    [
+        CacheHelper.BuildCacheItemName(new[] { ProductItem.CONTENT_TYPE_NAME, "all" })
+    ]);
+```
+
+### Using the tag helper
 
 The package provides a custom cache tag helper backed by `FusionCache`.
 
-To use it, include the tag helper in your view:
-
-```
+```html
 <xperience-fusion-cache
     name="home-page-cache"
     cache-dependencies="@(new string[] { "webpageitem|byid|1", "contentitem|bycontenttype|Medio.Clinic" })"
     duration="@TimeSpan.FromMinutes(5)"
     vary-by-option-types="@(new[] { typeof(ContactGroupVaryByOption) })">
 
-@* Cached HTML goes here *@
+    @* Cached HTML goes here *@
 
 </xperience-fusion-cache>
 ```
 
-See below, for a full list of options:
+#### Tag helper options
 
-| Option               | Description                                                                                                                                                                 | Example                                                           | Default    |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
-| name                 | Required. A unique name for the tag instance.                                                                                                                             | `"product-listing"`                                                 | `null`     |
-| enabled              | A value indicating whether caching is enabled for the tag.                                                                                                                  | `true`                                                            | `true`     |
-| cache-dependencies   | Collection of cache dependencies for the cache entry. The associated cache item will be cleared when one of the dependencies is touched by the system.                     | `new string[] { "webpageitem\|byid\|3" }`                         | `null`     |
-| cacheability-rules   | Collection of custom rules that determine whether the tag inner content can be cached based on whether the `IReadOnlyMemory<char>` pattern was found within the tags HTML. | `Func<ReadOnlyMemory<char>, bool> CacheDisabled = (content) => content.Span.IndexOf("cache-disabled=\"True\"") <= -1` | `null`     |
-| duration             | Cache duration.                                                                                                                                                              | `TimeSpan.FromMinutes(5)`                                         | 5 minutes  |
-| vary-by              | Custom vary by string.                                                                                                                                                     | `$"product-{product.Id}"`                                         | `null`     |
-| vary-by-header       | Vary the cache by the provided header(s).                                                                                                                                  | `"header1,header2"`                                               | `null`     |
-| vary-by-query        | Vary the cache by the provided query parameter(s).                                                                                                                         | `"page,filter"`                                                   | `null`     |
-| vary-by-route        | Vary the cache by the provided route parameter(s).                                                                                                                         | `"lang,id"`                                                       | `null`     |
-| vary-by-cookie       | Vary the cache by the provided cookie name(s).                                                                                                                             | `"cookie1,cookie2"`                                               | `null`     |
-| vary-by-user         | Vary the cache by the current user.                                                                                                                                        | `true`                                                            | `false`    |
-| vary-by-culture      | Vary the cache by the current request culture.                                                                                                                             | `true`                                                            | `false`    |
-| vary-by-option-types | `ICacheVaryByOption` implementations to vary the cache by. Useful for content personalization.                                                                             | `new[] { typeof(ContactGroupVaryByOption) }`                      | `null`     |
+| Option               | Description                                                                                                                                                               | Example                                                                                      | Default   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | --------- |
+| name                 | Required. A unique name for the tag instance.                                                                                                                             | `"product-listing"`                                                                          | `null`    |
+| enabled              | A value indicating whether caching is enabled for the tag.                                                                                                                | `true`                                                                                       | `true`    |
+| cache-dependencies   | Collection of cache dependencies for the cache entry. The associated cache item is cleared when one of the dependencies is touched by the system.                         | `new string[] { "webpageitem\|byid\|3" }`                                                   | `null`    |
+| cacheability-rules   | Collection of custom rules that determine whether the tag inner content can be cached based on whether the `IReadOnlyMemory<char>` pattern was found within the tag HTML. | `Func<ReadOnlyMemory<char>, bool> CacheDisabled = content => content.Span.IndexOf("cache-disabled=\"True\"") <= -1` | `null` |
+| duration             | Cache duration.                                                                                                                                                          | `TimeSpan.FromMinutes(5)`                                                                    | 5 minutes |
+| vary-by              | Custom vary-by string.                                                                                                                                                   | `$"product-{product.Id}"`                                                                    | `null`    |
+| vary-by-header       | Vary the cache by the provided headers.                                                                                                                                   | `"header1,header2"`                                                                          | `null`    |
+| vary-by-query        | Vary the cache by the provided query parameters.                                                                                                                          | `"page,filter"`                                                                              | `null`    |
+| vary-by-route        | Vary the cache by the provided route parameters.                                                                                                                          | `"lang,id"`                                                                                  | `null`    |
+| vary-by-cookie       | Vary the cache by the provided cookie names.                                                                                                                              | `"cookie1,cookie2"`                                                                          | `null`    |
+| vary-by-user         | Vary the cache by the current user.                                                                                                                                       | `true`                                                                                       | `false`   |
+| vary-by-culture      | Vary the cache by the current request culture.                                                                                                                            | `true`                                                                                       | `false`   |
+| vary-by-option-types | `ICacheVaryByOption` implementations to vary the cache by. Useful for content personalization.                                                                            | `new[] { typeof(ContactGroupVaryByOption) }`                                                  | `null`    |
 
+### Using output caching
 
+This package integrates with ASP.NET Core Output Caching middleware via a custom `IOutputCacheStore` and `IOutputCachePolicy` which has been integrated with `FusionCache`.
 
+Reference `XperienceFusionCache` as the policy name when using the `[OutputCache]` attribute and optionally specify cache dependencies via the `Tags` attribute.
 
-### Output cache
-
-This package integrates with the NET Core Output Caching middleware via a custom `IOutputCacheStore` and `IOutputCachePolicy` which has been integrated with `FusionCache`.
-
-Just reference `XperienceFusionCache` as the policy name when using the `[OutputCache]` attribute and optionally specify cache dependencies via the `Tags` attribute.
-
-Example usage:
-
-```
+```csharp
 public class HomePageController : Controller
 {
     [OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]
@@ -216,36 +425,27 @@ public class HomePageController : Controller
 
         // Associate cache dependencies with the current request
         this.HttpContext.AddCacheDependencies(
-            new HashSet<string>() {
+            new HashSet<string>
+            {
                 CacheHelper.BuildCacheItemName(new[] { "webpageitem", "bychannel", "MyWebsite", "bycontenttype", "website.homepage" }),
             });
 
         return new TemplateResult();
     }
 }
-
 ```
 
-You can also specify cache dependencies via the `AddCacheDependencies` extension method (see example above) if they aren't known at runtime.
+You can also specify cache dependencies via the `AddCacheDependencies` extension method if they aren't known at runtime.
 
-Policy defaults can be customized via `appsettings.json`:
+### Content personalization
 
-```
-"XperienceFusionCache": {
-  // ...
-  "OutputCachePolicyName": "MyOutputCachePolicy",
-  "OutputCacheExpiration": "00:05:00"
-}
-```
-### Content Personalization
-The library provides several ways to inject unique vary-by keys into each cache items key entry, granting compatibility with the widget personalization feature within Xperience:
-https://docs.kentico.com/business-users/digital-marketing/widget-personalization
+The library provides several ways to inject unique vary-by keys into each cache item key, providing compatibility with the widget personalization feature within Xperience.
 
-To utilize this feature, simply implement your custom `ICacheVaryByOption` types, ensuring a unique key is returned based on your own use case:
-https://docs.kentico.com/developers-and-admins/development/caching/output-caching#implement-custom-personalization-options
+See the Xperience documentation for [widget personalization](https://docs.kentico.com/business-users/digital-marketing/widget-personalization) and [custom personalization options for output caching](https://docs.kentico.com/developers-and-admins/development/caching/output-caching#implement-custom-personalization-options).
 
-Complete example:
-```
+To use this feature, implement custom `ICacheVaryByOption` types and ensure a unique key is returned based on your use case.
+
+```csharp
 public class ContactGroupVaryByOption : ICacheVaryByOption
 {
     public string GetKey()
@@ -266,21 +466,22 @@ public class ContactGroupVaryByOption : ICacheVaryByOption
 }
 ```
 
-Then pass these types to the `vary-by-option-types` attribute, if using the `<xperience-fusion-cache />` tag helper, e.g:
+Then pass these types to the `vary-by-option-types` attribute if using the `<xperience-fusion-cache />` tag helper:
 
-```
+```html
 <xperience-fusion-cache
     name="my-widget-cache"
     duration="@TimeSpan.FromMinutes(5)"
     vary-by-option-types="@(new[] { typeof(ContactGroupVaryByOption) })">
 
-@* Cached HTML which should vary by contact group goes here *@
+    @* Cached HTML which should vary by contact group goes here *@
 
 </xperience-fusion-cache>
 ```
 
-Or alternatively, if using controller level `[OutputCache]`, decorate the action result with `[XperienceFusionCacheVaryByOptionTypes]` and specify your custom `ICacheVaryByOption` types in the constructor, e.g:
-```
+Alternatively, if using controller-level `[OutputCache]`, decorate the action result with `[XperienceFusionCacheVaryByOptionTypes]` and specify your custom `ICacheVaryByOption` types in the constructor:
+
+```csharp
 [OutputCache(PolicyName = "XperienceFusionCache", Tags = ["webpageitem|all"])]
 [XperienceFusionCacheVaryByOptionTypes(VaryByOptionTypes = [typeof(ContactGroupVaryByOption)])]
 public async Task<IActionResult> Index()
@@ -291,34 +492,75 @@ public async Task<IActionResult> Index()
 }
 ```
 
-This ensures that your custom vary by option implementations are considered when constructing a unique cache key for the cache item.
+This ensures that your custom vary-by option implementations are considered when constructing a unique cache key for the cache item.
 
+## Cache invalidation
 
-### Extending cache invalidation for custom object types
+### Built-in invalidation
 
-Cache invalidation of standard Kentico objects (pages, content items, media etc...) is handled out of the box but if you want invalidation for general object types (those that inherit from `BaseInfo`) then you should implement the `IGeneralObjectCacheItemsProvider` type and place it somewhere within your application root.
+The package automatically handles cache invalidation for supported Xperience by Kentico objects, including:
 
-Example:
+- Web pages
+- Content items
+- Media files
+- Settings keys
+- Headless items
 
-```
-public class GeneralObjectsCacheItemsProvider : IGeneralObjectCacheItemsProvider
+When supported objects change, the package generates the relevant Kentico cache dependency keys and removes FusionCache entries associated with those tags.
+
+### Extending invalidation for custom object types
+
+If you want to invalidate cache entries when other Xperience objects change, you can register one or more `IGeneralObjectCacheItemsProvider` implementations.
+
+This is useful for objects that inherit from `BaseInfo`, such as custom module classes or other Kentico/Xperience info objects. The provider exposes a collection of `ObjectTypeInfo` instances through the `GeneralObjectInfos` property.
+
+#### Implement `IGeneralObjectCacheItemsProvider`
+
+```csharp
+public sealed class BrandCacheItemsProvider : IGeneralObjectCacheItemsProvider
 {
-    public IEnumerable<ObjectTypeInfo> GeneralObjectInfos => new List<ObjectTypeInfo>()
-    {
-        SomeCustomTypeInfo.TYPEINFO,
-        UserInfo.TYPEINFO,
-        //...
-    };
+    public IEnumerable<ObjectTypeInfo> GeneralObjectInfos =>
+    [
+        ProductBrandInfo.TYPEINFO
+    ];
 }
 ```
 
-This will ensure cache invalidation based on the 'General objects' dummy cache keys for the listed types: https://docs.kentico.com/developers-and-admins/development/caching/cache-dependencies#general-objects
+#### Register the provider
+
+Register the provider as a singleton in `Program.cs`:
+
+```csharp
+builder.Services.AddSingleton<IGeneralObjectCacheItemsProvider, BrandCacheItemsProvider>();
+```
+
+You can register multiple providers if you want to split object registrations by feature or project area:
+
+```csharp
+builder.Services.AddSingleton<IGeneralObjectCacheItemsProvider, MembershipCacheItemsProvider>();
+builder.Services.AddSingleton<IGeneralObjectCacheItemsProvider, CustomModuleCacheItemsProvider>();
+```
+
+#### How general object invalidation works
+
+When a registered general object type is inserted, updated, or deleted, the package generates the matching general object dummy cache keys and removes FusionCache entries associated with those tags.
+
+For example, if your provider returns:
+
+```csharp
+UserInfo.TYPEINFO
+```
+
+then user object changes can invalidate entries tagged with the corresponding general object cache dependencies.
+
+The package only tracks the object class names exposed by the `ObjectTypeInfo` instances returned from registered `IGeneralObjectCacheItemsProvider` implementations. If no providers are registered, general object invalidation is skipped.
+
+See the Xperience documentation for [general object cache dependency keys](https://docs.kentico.com/developers-and-admins/development/caching/cache-dependencies#general-objects).
 
 ## Contributing
 
-To see the guidelines for Contributing to Kentico open source software, please see [Kentico's `CONTRIBUTING.md`](https://github.com/Kentico/.github/blob/main/CONTRIBUTING.md) for more information and follow the [Kentico's `CODE_OF_CONDUCT`](https://github.com/Kentico/.github/blob/main/CODE_OF_CONDUCT.md).
+To see the guidelines for contributing to Kentico open source software, see [Kentico's `CONTRIBUTING.md`](https://github.com/Kentico/.github/blob/main/CONTRIBUTING.md) and follow [Kentico's `CODE_OF_CONDUCT`](https://github.com/Kentico/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
 Distributed under the MIT License. See [`LICENSE.md`](./LICENSE.md) for more information.
-

@@ -1,31 +1,85 @@
-﻿using ZiggyCreatures.Caching.Fusion;
+﻿using Microsoft.Extensions.Logging;
+
+using ZiggyCreatures.Caching.Fusion;
 
 namespace XperienceCommunity.FusionCache.Caching.Services;
 
 /// <summary>
-/// Service for interacting with dummy cache keys.
+/// Service for invalidating FusionCache entries by Kentico-style dummy cache keys.
 /// </summary>
-internal class DummyCacheKeysService
+internal sealed class DummyCacheKeysService
 {
     private readonly IFusionCache fusionCache;
+    private readonly ILogger<DummyCacheKeysService> logger;
+
+    public DummyCacheKeysService(
+        IFusionCache fusionCache,
+        ILogger<DummyCacheKeysService> logger)
+    {
+        this.fusionCache = fusionCache;
+        this.logger = logger;
+    }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="DummyCacheKeysService"/> class.
+    /// Removes FusionCache entries tagged with the supplied dummy cache keys.
     /// </summary>
-    /// <param name="fusionCache">Instance of <see cref="IFusionCache"/>.</param>
-    public DummyCacheKeysService(IFusionCache fusionCache) => this.fusionCache = fusionCache;
-
-    /// <summary>
-    /// Touches Kentico dummy cache keys.
-    /// </summary>
-    /// <param name="keys">Collection of dummy keys to touch.</param>
-    public void TouchDummyKeys(IEnumerable<string> keys)
+    /// <param name="keys">Collection of dummy cache keys used as FusionCache tags.</param>
+    public void TouchDummyKeys(IEnumerable<string>? keys)
     {
         if (keys is null)
         {
             return;
         }
 
-        Parallel.ForEach(keys, key => fusionCache.RemoveByTag(key));
+        foreach (string key in keys
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                logger.LogDebug("Removing FusionCache entries by tag: {Tag}", key);
+
+                fusionCache.RemoveByTag(key);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to remove FusionCache entries by tag: {Tag}",
+                    key);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Removes FusionCache entries tagged with the supplied dummy cache keys.
+    /// </summary>
+    /// <param name="keys">Collection of dummy cache keys used as FusionCache tags.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    public async Task TouchDummyKeysAsync(IEnumerable<string>? keys, CancellationToken cancellationToken)
+    {
+        if (keys is null)
+        {
+            return;
+        }
+
+        foreach (string key in keys
+            .Where(key => !string.IsNullOrWhiteSpace(key))
+            .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                logger.LogDebug("Removing FusionCache entries by tag: {Tag}", key);
+
+                await fusionCache.RemoveByTagAsync(key, token: cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(
+                    ex,
+                    "Failed to remove FusionCache entries by tag: {Tag}",
+                    key);
+            }
+        }
     }
 }
