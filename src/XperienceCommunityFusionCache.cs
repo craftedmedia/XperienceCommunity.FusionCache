@@ -161,6 +161,12 @@ public static class XperienceCommunityFusionCache
             JitterMaxDuration = TimeSpan.FromSeconds(2),
         };
 
+        // Treat unreadable L2 entries as cache misses so GetOrSet can reload them.
+        // Apply this even when only some entry options are configured, while honoring an explicit opt-in to throwing.
+        options.DefaultFusionCacheEntryOptions.ReThrowSerializationExceptions = configuration.GetValue(
+            "XperienceFusionCache:DefaultFusionCacheEntryOptions:ReThrowSerializationExceptions",
+            false);
+
         // This will be our primary L1 cache.
         services.AddMemoryCache();
 
