@@ -13,6 +13,7 @@ The package includes:
 - ASP.NET Core Output Caching support
 - Content personalization support
 - Redis-backed L2 cache support
+- A Redis administration application with an overview and exclusion-aware purging
 
 If you're unfamiliar with hybrid caching, read the [gentle introduction to FusionCache](https://github.com/ZiggyCreatures/FusionCache/blob/main/docs/AGentleIntroduction.md).
 
@@ -135,7 +136,7 @@ Or use the output cache policy:
 
 ## Configuration
 
-Most package configuration is provided through the `XperienceFusionCache` section in `appsettings.json`. Redis connection configuration can be provided either through `appsettings.json` or by passing an `IConnectionMultiplexer` or factory when registering services.
+Package configuration is provided through the `XperienceFusionCache` section in `appsettings.json`. Redis connection configuration can be provided either through `appsettings.json` or by passing an `IConnectionMultiplexer` or factory when registering services.
 
 ### Redis connection configuration
 
@@ -556,6 +557,88 @@ then user object changes can invalidate entries tagged with the corresponding ge
 The package only tracks the object class names exposed by the `ObjectTypeInfo` instances returned from registered `IGeneralObjectCacheItemsProvider` implementations. If no providers are registered, general object invalidation is skipped.
 
 See the Xperience documentation for [general object cache dependency keys](https://docs.kentico.com/developers-and-admins/development/caching/cache-dependencies#general-objects).
+
+## Fusion Cache administration module
+
+The Fusion Cache administration screens are included in `XperienceCommunity.FusionCache` and register automatically in the Xperience administration. Keep the existing `AddXperienceFusionCache(...)` registration in the application hosting the administration, including when using a detached admin.
+
+Open **Development → Fusion Cache** at `/admin/fusion-cache` (overview: `/admin/fusion-cache/overview`):
+
+- **Overview** shows the configured friendly name, Redis instance name, connection status, selected database, total key count, primary endpoints, Redis version, memory usage and peak memory in MiB, connected clients, uptime, and snapshot time. Refresh the page for updated figures. Key counts cover the selected database; memory, client counts and uptime are server-wide. Replicas are excluded from totals. Unavailable fields and server statistics are omitted, including when Redis denies `INFO` or `DBSIZE`; genuine zero values remain visible. Connection status is independent of permissions to read optional statistics. See [Redis admin mode and overview fields](#redis-admin-mode-and-overview-fields) for the requirements of each field.
+- **Purge Redis** deletes all keys in that database except configured exclusions and additional exclusions entered for the current purge. Existing in-memory entries remain available until expiration.
+- **Purge All** uses FusionCache's API to invalidate its entries in both layers across applications sharing this cache's Redis backplane. It does not scan or directly delete Redis keys. Session, data protection and other keys stored outside FusionCache are unaffected.
+
+The Redis purge accepts one exact key or pattern per line. The Fusion Cache purge has no exclusion fields because it invalidates all entries within this FusionCache scope. For either action, type `PURGE`, then confirm the dialog. The Redis purge result reports confirmed deletions and excluded key observations; repeated observations are possible during a scan. The Fusion Cache purge result reports whether invalidation was published.
+
+Grant the application's **View** permission for the overview and **Purge caches** permission for either purge section through Xperience's role management. Purge commands enforce the purge permission on the server. Purge outcomes, scope and the initiating user's ID are recorded in Xperience's event log under `FusionCache.Redis`.
+
+### Redis admin mode and overview fields
+
+The overview works without Redis admin mode. The optional server statistics require `allowAdmin=true` because StackExchange.Redis gates explicit `INFO` calls behind that setting. This is a Redis client setting, separate from the user's Xperience administration permissions.
+
+| Overview field | Requires `allowAdmin=true`? | Source |
+| --- | --- | --- |
+| Redis name and Redis instance name | No | Application configuration, with Redis host names as the instance-name fallback |
+| Connection status and Database | No | The shared Redis connection |
+| Total keys in database | No | `DBSIZE` for the selected database on each primary server; Redis must permit this command |
+| Primary server endpoints | No | The shared Redis connection |
+| Last updated | No | The time the application generated the snapshot |
+| Memory used by primary servers | Yes | `INFO`, summed across primary servers when all memory values are available |
+| Redis version, Memory, Peak memory, Connected clients, and Uptime under Primary servers | Yes | `INFO` for each primary server |
+
+When admin mode is disabled, the primary server endpoints remain visible, but their optional statistics and the aggregate memory field are hidden. If Redis denies `INFO` or omits a statistic, the corresponding fields are also hidden. The total key count is hidden if any primary server's count is unavailable, including when Redis denies `DBSIZE`.
+
+To enable the optional statistics, add `allowAdmin=true` to the Redis connection string used by FusionCache, for example:
+
+```text
+localhost:6379,allowAdmin=true
+```
+
+When the package creates the connection, this is the `XperienceFusionCache:RedisConnectionString` setting. When supplying an existing connection multiplexer or a factory to `AddXperienceFusionCache(...)`, enable admin mode on that connection before creating it:
+
+```csharp
+var redisOptions = ConfigurationOptions.Parse(redisConnectionString);
+redisOptions.AllowAdmin = true;
+var connection = await ConnectionMultiplexer.ConnectAsync(redisOptions);
+```
+
+The package reuses that connection and does not change its permissions. Changing the package's connection-string setting has no effect when an externally supplied multiplexer is used. Restart the application after changing the connection configuration so the shared multiplexer is recreated.
+
+`allowAdmin=true` does not grant Redis server permissions: the authenticated Redis user must also be allowed to execute `INFO`. `DBSIZE` permission is required for key counts even when admin mode is disabled. See the [StackExchange.Redis configuration reference](https://github.com/StackExchange/StackExchange.Redis/blob/main/docs/Configuration.md), [Redis INFO reference](https://redis.io/docs/latest/commands/info/), and [Redis DBSIZE reference](https://redis.io/docs/latest/commands/dbsize/).
+
+Neither **Purge Redis** nor **Purge All** requires admin mode. Their normal Redis command permissions still apply.
+
+### Persistent exclusions
+
+Use `XperienceFusionCache:RedisManagement` to configure a friendly name and exclusions that apply to **Purge Redis**. Administrators cannot remove these configured protections through the purge form. Additional exclusions entered in the form apply only to that purge and are not saved. These rules are not used by **Purge All**.
+
+```json
+{
+  "XperienceFusionCache": {
+    "RedisConnectionString": "localhost:6379,defaultDatabase=0",
+    "RedisManagement": {
+      "DisplayName": "Website cache",
+      "ExcludedKeys": ["shared-dataprotection-keys"],
+      "ExcludedPatterns": ["session:*"],
+      "PurgeTimeout": "00:02:00"
+    }
+  }
+}
+```
+
+Exclusions match the **actual Redis key**, including any prefixes added by your cache libraries. Matching is case-sensitive and preserves spaces. Exact-key exclusions treat every character literally. Patterns support `*` (zero or more characters) and `?` (one character); all other characters, including brackets and backslashes, are literal. For example, `session:*` excludes keys beginning with `session:`, and `*:settings` excludes keys ending with `:settings`. A pattern of `*` skips all direct Redis deletion. Each combined list of configured and additional exclusions supports up to 200 distinct entries of at most 1024 characters each.
+
+### Purge behavior
+
+**Purge Redis** scans the entire selected Redis database, including keys belonging to other applications if they share it. Other Redis databases are not scanned. Existing FusionCache L1/in-memory entries remain available until expiration, including fail-safe retention where enabled.
+
+**Purge All** calls FusionCache's `ClearAsync(allowFailSafe: false)` without scanning or directly deleting Redis keys. This makes previously cached FusionCache entries unavailable, including fail-safe copies, on the current instance and other connected applications sharing its backplane channel and cache key prefix. Redis entries may remain until expiry or subsequent access, so key counts need not fall immediately. It requires the distributed cache, backplane and tagging to be enabled. It does not clear unrelated `IMemoryCache` instances or separately configured FusionCache caches. See FusionCache's [Clear documentation](https://github.com/ZiggyCreatures/FusionCache/blob/v2.9.0/docs/Clear.md).
+
+The Fusion Cache action waits for backplane publication before reporting success. Remote applications do not acknowledge completion, and disconnected applications may miss the notification. A failure reports that global invalidation could not be confirmed; some applications may already have invalidated their entries.
+
+A Redis purge is not an atomic snapshot. Writers can create or replace entries while it runs, so successful completion does not guarantee an empty database. Avoid concurrent purges across different admin instances. A timeout or connection/permission failure can leave a partially purged database; the result reports confirmed deletions and does not claim success. `PurgeTimeout` applies to both actions, defaults to two minutes and must be greater than zero and at most one hour. Commands already sent are allowed to finish before the operation releases its local lock; proxy/request timeouts may need adjustment for large databases.
+
+With `DevMode` enabled, the overview reports that Redis is disabled and purging is unavailable.
 
 ## Contributing
 
