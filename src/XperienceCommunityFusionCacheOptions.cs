@@ -15,6 +15,11 @@ namespace XperienceCommunity.FusionCache
         public string? RedisConnectionString { get; set; }
 
         /// <summary>
+        /// Gets or sets Redis administration options, including exclusions enforced for every purge.
+        /// </summary>
+        public Management.RedisCacheManagementOptions RedisManagement { get; set; } = new();
+
+        /// <summary>
         /// Gets or sets the default output cache policy name.
         /// </summary>
         public string OutputCachePolicyName { get; set; } = XperienceCommunityFusionCacheOutputCachePolicy.DefaultPolicyName;

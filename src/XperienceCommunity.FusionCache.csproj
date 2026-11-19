@@ -16,8 +16,10 @@
 	<ItemGroup>
 		<PackageReference Include="Kentico.Xperience.Core" />
 		<PackageReference Include="Kentico.Xperience.WebApp" />
+		<PackageReference Include="Kentico.Xperience.Admin" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.TagHelpers" />
 		<PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+		<PackageReference Include="StackExchange.Redis" />
 		<PackageReference Include="ZiggyCreatures.FusionCache" />
 		<PackageReference Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis" />
 		<PackageReference Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" />

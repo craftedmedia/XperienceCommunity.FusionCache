@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 
 using StackExchange.Redis;
 
@@ -16,6 +17,7 @@ using XperienceCommunity.FusionCache.EventHooks.Headless;
 using XperienceCommunity.FusionCache.EventHooks.Media;
 using XperienceCommunity.FusionCache.EventHooks.Settings;
 using XperienceCommunity.FusionCache.EventHooks.WebPage;
+using XperienceCommunity.FusionCache.Management;
 using XperienceCommunity.FusionCache.Services;
 
 using ZiggyCreatures.Caching.Fusion;
@@ -176,28 +178,27 @@ public static class XperienceCommunityFusionCache
             .WithDefaultEntryOptions(options.DefaultFusionCacheEntryOptions)
             .WithSerializer(GetConfiguredSerializer(options.DefaultSerializer));
 
-        if (options.DevMode)
+        Func<IServiceProvider, Task<IConnectionMultiplexer>>? sharedRedisFactory = null;
+        if (!options.DevMode)
         {
-            // Use isolated in-memory cache when in dev mode.
-        }
-        else if (hasProvidedConnectionMultiplexerFactory)
-        {
-            // Use the caller-provided connection multiplexer/factory.
-            ConfigureRedisUsingConnectionMultiplexerFactory(
-                fusionCacheBuilder,
-                redisConnectionMultiplexerFactory!);
-        }
-        else
-        {
-            // Register a shared app-level Redis connection multiplexer from the configured connection string.
-            services.TryAddSingleton<IConnectionMultiplexer>(_ =>
-                ConnectionMultiplexer.Connect(options.RedisConnectionString!));
+            if (!hasProvidedConnectionMultiplexerFactory)
+            {
+                services.TryAddSingleton<IConnectionMultiplexer>(_ =>
+                    ConnectionMultiplexer.Connect(options.RedisConnectionString!));
+                redisConnectionMultiplexerFactory = serviceProvider => Task.FromResult(
+                    serviceProvider.GetRequiredService<IConnectionMultiplexer>());
+            }
 
-            ConfigureRedis(
-                fusionCacheBuilder,
-                serviceProvider => Task.FromResult(
-                    serviceProvider.GetRequiredService<IConnectionMultiplexer>()));
+            sharedRedisFactory = CreateSharedConnectionMultiplexerFactory(redisConnectionMultiplexerFactory!);
+            ConfigureRedis(fusionCacheBuilder, sharedRedisFactory);
         }
+
+        services.AddSingleton<IRedisCacheManagementService>(serviceProvider =>
+            new RedisCacheManagementService(options.RedisManagement,
+                sharedRedisFactory is null ? null : () => sharedRedisFactory(serviceProvider),
+                () => serviceProvider.GetRequiredService<IFusionCache>(),
+                serviceProvider.GetRequiredService<IOptions<FusionCacheOptions>>(),
+                serviceProvider.GetRequiredService<IOptions<RedisCacheOptions>>().Value.InstanceName));
 
         // Register our fusion cache tag helper service.
         services.AddSingleton<FusionCacheTagHelperService>();
@@ -230,18 +231,6 @@ public static class XperienceCommunityFusionCache
             true));
 
         return services;
-    }
-
-    private static void ConfigureRedisUsingConnectionMultiplexerFactory(
-        IFusionCacheBuilder fusionCacheBuilder,
-        Func<IServiceProvider, Task<IConnectionMultiplexer>> redisConnectionMultiplexerFactory)
-    {
-        var sharedConnectionMultiplexerFactory =
-            CreateSharedConnectionMultiplexerFactory(redisConnectionMultiplexerFactory);
-
-        ConfigureRedis(
-            fusionCacheBuilder,
-            sharedConnectionMultiplexerFactory);
     }
 
     private static void ConfigureRedis(
